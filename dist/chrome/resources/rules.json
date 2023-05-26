@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "accept",
+          "operation": "remove"
+        },
+        {
+          "header": "origin",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-fetch-mode",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-fetch-dest",
+          "operation": "remove"
+        },
+        {
+          "header": "accept-language",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-ch-ua",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-ch-ua-platform",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-ch-ua-mobile",
+          "operation": "remove"
+        },
+        {
+          "header": "user-agent",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-fetch-site",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://www.mindmeister.com/generic_files/*",
+      "initiatorDomains": [
+        "chrome-extension://*"
+      ]
+    }
+  },
+  {"id": 2,
+  "action": {
+    "type": "modifyHeaders",
+    "requestHeaders": [
+      {
+        "header": "accept",
+        "operation": "remove"
+      },
+      {
+        "header": "origin",
+        "operation": "remove"
+      },
+      {
+        "header": "sec-fetch-mode",
+        "operation": "remove"
+      },
+      {
+        "header": "sec-fetch-dest",
+        "operation": "remove"
+      },
+      {
+        "header": "accept-language",
+        "operation": "remove"
+      },
+      {
+        "header": "sec-ch-ua",
+        "operation": "remove"
+      },
+      {
+        "header": "sec-ch-ua-platform",
+        "operation": "remove"
+      },
+      {
+        "header": "sec-ch-ua-mobile",
+        "operation": "remove"
+      },
+      {
+        "header": "user-agent",
+        "operation": "remove"
+      },
+      {
+        "header": "sec-fetch-site",
+        "operation": "remove"
+      }
+    ]
+  },
+  "condition": {
+    "urlFilter": "https://www.mindmeister.com/sharing/*",
+    "initiatorDomains": [
+      "chrome-extension://*"
+    ]
+  }
+},
+  {"id": 3,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "accept",
+          "operation": "remove"
+        },
+        {
+          "header": "origin",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-fetch-mode",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-fetch-dest",
+          "operation": "remove"
+        },
+        {
+          "header": "accept-language",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-ch-ua",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-ch-ua-platform",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-ch-ua-mobile",
+          "operation": "remove"
+        },
+        {
+          "header": "user-agent",
+          "operation": "remove"
+        },
+        {
+          "header": "sec-fetch-site",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://www.mindmeister.com/*",
+      "initiatorDomains": [
+        "ojgphilpbmgaclmomnhjbcmjmhdlcbbn"
+      ]
+    }
+  }
+]

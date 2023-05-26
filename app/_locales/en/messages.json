@@ -1,0 +1,22 @@
+{
+  "appName": {
+    "message": "Chatin",
+    "description": "The name of the application"
+  },
+  "appShortName": {
+    "message": "Chatin",
+    "description": "The short_name (maximum of 12 characters recommended) is a short version of the app's name."
+  },
+  "appDescription": {
+    "message": "This extension enables Design Science Research through Mindmeister.",
+    "description": "The description of the application"
+  },
+  "browserActionTitle": {
+    "message": "Chatin",
+    "description": "The title of the browser action button"
+  },
+  "pageActionTitle": {
+    "message": "Chatin",
+    "description": "The title of the browser action button"
+  }
+}
