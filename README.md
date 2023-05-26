@@ -1,5 +1,6 @@
 # Chatin
-
+This extension enables Design Science Research through Mindmeister.
+This extension integrates Mindmeister with ChatGPT
 # For End-users
 
 End users require a mindmeister account
