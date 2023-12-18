@@ -13,8 +13,8 @@ class ContentScript {
   }
 
   initUrlManager () {
-    let homepageUrlPattern = /https?:\/\/www\.mindmeister\.com\/(folders|maps)\/?/
-    let mindmapUrlPattern = /https?:\/\/www\.mindmeister\.com\/map\/\d+/
+    let homepageUrlPattern = /https?:\/\/www\.mindmeister\.com\/(app\/folders|folders|maps|app\/maps)\/?/
+    let mindmapUrlPattern = /https?:\/\/www\.mindmeister\.com\/(map|app\/map)\/\d+/
     if (homepageUrlPattern.test(window.location.href)) this._homepageManager.init()
     else if (mindmapUrlPattern.test(window.location.href)) this._mindmapManager.init()
   }

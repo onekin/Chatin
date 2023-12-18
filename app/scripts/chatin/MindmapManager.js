@@ -44,10 +44,10 @@ class MindmapManager {
   }
   init () {
     let that = this
-    let urlRegexp = /https?:\/\/www\.mindmeister\.com\/map\/(\d+)($|\/|\?|#)/
+    let urlRegexp = /https?:\/\/www\.mindmeister\.com\/(map|app\/map)\/(\d+)($|\/|\?|#)/
     let m = window.location.href.match(urlRegexp)
-    if (m == null || m.length < 2) return
-    let nodeId = m[1]
+    if (m == null || m.length < 3) return
+    let nodeId = m[2]
     let node = MindmapWrapper.getNodeById(nodeId)
     if (node == null) {
       setTimeout(() => {
@@ -266,7 +266,7 @@ class MindmapManager {
     let pattern = /\d(\)|\.)[^:\-\.\n$]+(:|\-|\.|\n|$)/g
     let result = answer.match(pattern)
     if (result == null || result.length === 0) return []
-    let resultNew = result.map((r) => r.replace(/\)/g, '\\)').replace(/\./g, '\\.'))
+    let resultNew = result.map((r) => r.replace(/\)/g, '\\)').replace(/\./g, '\\.').replace(/\*/g, '\\*'))
     let regexp = new RegExp('(' + resultNew.join('|') + ')', 'gi')
     let parts = answer.split(regexp)
     result.forEach((r, ind) => {

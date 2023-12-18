@@ -1,17 +1,23 @@
 import gulp from 'gulp'
-import gulpSequence from 'gulp-sequence'
+require('./scripts')
+require('./manifest')
+require('./styles')
+require('./pages')
+require('./locales')
+require('./images')
+require('./fonts')
+require('./chromereload')
+require('./resources')
+require('./clean')
 
-gulp.task('build', gulpSequence(
-  'clean', [
-    'manifest',
-    'scripts',
-    'styles',
-    'pages',
-    'libs',
-    'resources',
-    'locales',
-    'images',
-    'fonts',
-    'chromereload'
-  ]
-));
+gulp.task('build', gulp.series('clean', gulp.parallel(
+  'manifest',
+  'scripts',
+  'styles',
+  'pages',
+  'locales',
+  'images',
+  'fonts',
+  'chromereload',
+  'resources'
+)))
