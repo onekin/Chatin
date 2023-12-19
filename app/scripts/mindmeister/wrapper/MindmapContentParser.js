@@ -21,13 +21,13 @@ class MindmapContentParser {
     }
   }
 
-  getNodeChildren (parentId){
+  getNodeChildren (parentId) {
     let nodeEls = this._mapInfo.ideas.idea.filter((i) => {
       return i.parent === parentId
     })
     if (nodeEls == null) return []
     else {
-      return nodeEls.map((n) => { return new MindmapContentParserNode(n, this)})
+      return nodeEls.map((n) => { return new MindmapContentParserNode(n, this) })
     }
   }
 
@@ -37,7 +37,7 @@ class MindmapContentParser {
     })
     if (nodeEls == null) return []
     else {
-      return nodeEls.map((n) => { return new MindmapContentParserNode(n, this)})
+      return nodeEls.map((n) => { return new MindmapContentParserNode(n, this) })
     }
   }
 }

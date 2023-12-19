@@ -6,7 +6,7 @@ const Utils = require('../utils/Utils')
 class HomePageManager {
   constructor () {
     this._templates = {
-      'chatin': 'resources/mindmapTemplates/RQScopingTemplate.mind'
+      'chatin': 'resources/mindmapTemplates/RQScoping.mind'
     }
     // nothing todo here
   }
@@ -21,7 +21,7 @@ class HomePageManager {
           window.location.href = `https://www.mindmeister.com/map/${mapId}`
         })
       })
-    }).catch((error) => {
+    }).catch(() => {
       Alerts.showErrorToast('There was an error while creating the mind map')
     })
   }
@@ -72,7 +72,7 @@ class HomePageManager {
       }, false)
       chatinTemplateInsertionPoint.insertBefore(chatinTemplate, chatinTemplateInsertionPoint.children[1])
     }
-    let obs = new MutationObserver(function(mutations){
+    let obs = new MutationObserver(function (mutations) {
       observerFunc()
     })
     if (target != null) {

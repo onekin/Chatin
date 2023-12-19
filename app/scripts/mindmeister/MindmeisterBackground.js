@@ -2,7 +2,7 @@
 const APIClientId = 'XxUt7w0Xri-9hmIvvRNaIbMe4HrOml2giLDT5qFT5W8'
 const TokenStorageKey = 'MINDMEISTER_ACCESS_TOKEN'
 const Utils = require('../utils/Utils')
-const PromptStyles = require('../chatin/PromptStyles')
+// const PromptStyles = require('../chatin/PromptStyles')
 
 class MindmeisterBackground {
   constructor () {
@@ -37,10 +37,10 @@ class MindmeisterBackground {
             that.createMindmapFromTemplate(message.args.templateFileUrl).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'getBelongingMap') {
             that.getBelongingMap(message.args.nodeId).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
-          // } else if (message.method === 'changeNodeIcon') {
-          //   that.changeNodeIcon(message.args.mapId, message.args.nodeId, message.args.icon).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
-          // } else if (message.method === 'addNode') {
-          //   that.addNode(message.args.mapId, message.args.parentId, message.args.newNode).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
+            // } else if (message.method === 'changeNodeIcon') {
+            //   that.changeNodeIcon(message.args.mapId, message.args.nodeId, message.args.icon).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
+            // } else if (message.method === 'addNode') {
+            //   that.addNode(message.args.mapId, message.args.parentId, message.args.newNode).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'addNodes') {
             that.addNodes(message.args.mapId, message.args.newNodes).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'modifyNodes') {
@@ -124,7 +124,7 @@ class MindmeisterBackground {
     return new Promise((resolve, reject) => {
       chrome.storage.sync.get(TokenStorageKey, (options) => {
         let token = options[TokenStorageKey] || null
-        if (token == null) reject('error')
+        if (token == null) reject(new Error('error'))
         else resolve(token)
       })
     })
@@ -146,7 +146,7 @@ class MindmeisterBackground {
         Utils.performRequest(opts).then((resp) => resp.json()).then((ret) => {
           if (ret.rsp.stat !== 'ok') {
             that.removeToken().then(() => {
-              reject('error')
+              reject(reject(new Error('error')))
             })
           } else resolve()
         })
@@ -161,10 +161,9 @@ class MindmeisterBackground {
   }
 
   getMapNo (mapId) {
-
     let that = this
     return new Promise((resolve, reject) => {
-      let data = {idea_id: mapId, isEmbeddedView: false, isPrintView: false, isPublicView: false}
+      let data = { idea_id: mapId, isEmbeddedView: false, isPrintView: false, isPublicView: false }
       fetch('https://www.mindmeister.com/maps/content.json', {
         method: 'POST',
         headers: {
@@ -172,11 +171,19 @@ class MindmeisterBackground {
           'x-csrf-token': that._csrfToken
         },
         body: JSON.stringify(data)
-      }).then((resp) => resp.json()).then((ret) => {
-          if (ret.map == null) reject('error')
-          else resolve(ret)
+      })
+        .then((resp) => resp.json())
+        .then((ret) => {
+          if (ret.map == null) {
+            reject(new Error('error'))
+          } else {
+            resolve(ret)
+          }
         })
-      }, (error) => { reject(error) })
+        .catch((error) => {
+          reject(error)
+        })
+    })
   }
 
   getMap (mapId) {
@@ -227,17 +234,17 @@ class MindmeisterBackground {
     let that = this
     return new Promise((resolve, reject) => {
       // that.getToken().then((token) => {
-        // fetch(fileUrl).then((response) => response.arrayBuffer()).then((fileContent) => {
-        // that.getFileByUrl(fileUrl).then((file) => {
-          // var fileContent = new File([file], 'image.png')
-          // const formData  = new FormData()
-          /*
-          formData.append('method', 'mm.files.add')
-          formData.append('map_id', mapId)
-          formData.append('file_type', 'idea_image')
-          formData.append('file', fileContent)
-          formData.append('access_token', token)
-          */
+      // fetch(fileUrl).then((response) => response.arrayBuffer()).then((fileContent) => {
+      // that.getFileByUrl(fileUrl).then((file) => {
+      // var fileContent = new File([file], 'image.png')
+      // const formData  = new FormData()
+      /*
+      formData.append('method', 'mm.files.add')
+      formData.append('map_id', mapId)
+      formData.append('file_type', 'idea_image')
+      formData.append('file', fileContent)
+      formData.append('access_token', token)
+      */
       let data = { 'filetype': 'idea_image', 'source': 3, 'name': image.mindmeisterName, 'width': 23, 'height': 23 }
       fetch('https://www.mindmeister.com/generic_files/upload.json', {
         method: 'POST',
@@ -246,22 +253,29 @@ class MindmeisterBackground {
           'x-csrf-token': that._csrfToken
         },
         body: JSON.stringify(data)
-      }).then((resp) => resp.json()).then((ret) => {
-        if (ret == null || ret.file == null || ret.file.id == null) reject('error')
-        else resolve(ret.file.id)
       })
-
-          /* var xhr = new XMLHttpRequest()
-          xhr.addEventListener('readystatechange', function () {
-            if (this.readyState === 4) {
-              var response = JSON.parse(this.responseText)
-              if (response.file != null) resolve(response.file.id)
-              else if (response.err != null) reject(response.err.msg)
-            }
-          })
-          xhr.open('POST', 'https://www.mindmeister.com/services/rest/oauth2')
-          xhr.send(formData) */
-        // })
+        .then((resp) => resp.json())
+        .then((ret) => {
+          if (ret == null || ret.file == null || ret.file.id == null) {
+            reject(new Error('Error uploading file'))
+          } else {
+            resolve(ret.file.id)
+          }
+        })
+        .catch((error) => {
+          reject(new Error(error.message))
+        })
+      /* var xhr = new XMLHttpRequest()
+      xhr.addEventListener('readystatechange', function () {
+        if (this.readyState === 4) {
+          var response = JSON.parse(this.responseText)
+          if (response.file != null) resolve(response.file.id)
+          else if (response.err != null) reject(response.err.msg)
+        }
+      })
+      xhr.open('POST', 'https://www.mindmeister.com/services/rest/oauth2')
+      xhr.send(formData) */
+      // })
       // }, (error) => { reject(error) })
     })
   }
@@ -462,16 +476,18 @@ class MindmeisterBackground {
     let that = this
     return new Promise((resolve, reject) => {
       let promiseList = []
-      changeList.images.forEach((i) => {
+      changeList.images.forEach(i => {
+        // eslint-disable-next-line promise/param-names
         promiseList.push(new Promise((res, rej) => {
-          that.uploadImage(mapId, i).then((imageId) => {
+          that.uploadImage(mapId, i).then(imageId => {
             changeList.setImageId(i.mindmeisterName, imageId)
             res()
           })
         }))
       })
-      if (promiseList.length === 0) resolve()
-      else {
+      if (promiseList.length === 0) {
+        resolve()
+      } else {
         Promise.all(promiseList).then(() => {
           resolve()
         })
@@ -483,19 +499,19 @@ class MindmeisterBackground {
     let that = this
     return new Promise((resolve, reject) => {
       let promiseList = []
-      changeList.images.forEach((i) => {
-        promiseList.push(new Promise((res, rej) => {
-          that.uploadImage(mapId, i).then((imageId) => {
+      changeList.images.forEach(i => {
+        // eslint-disable-next-line promise/param-names
+        promiseList.push(new Promise((resolveInner, rejectInner) => {
+          that.uploadImage(mapId, i).then(imageId => {
             changeList.setImageId(i.mindmeisterName, imageId)
-            res()
-          })
+            resolveInner()
+          }).catch(rejectInner)
         }))
       })
-      if (promiseList.length === 0) resolve()
-      else {
-        Promise.all(promiseList).then(() => {
-          resolve()
-        })
+      if (promiseList.length === 0) {
+        resolve()
+      } else {
+        Promise.all(promiseList).then(resolve).catch(reject)
       }
     })
   }
@@ -539,7 +555,7 @@ class MindmeisterBackground {
   doChanges (mapId, changes) {
     let that = this
     return new Promise((resolve, reject) => {
-      let data = {'changes': changes, 'revision': 999, root_id: parseInt(mapId)}
+      let data = {'changes': changes, 'revision': 999, 'root_id': parseInt(mapId)}
       fetch('https://www.mindmeister.com/panda/maps/do.json', {
         method: 'POST',
         headers: {
@@ -547,11 +563,19 @@ class MindmeisterBackground {
           'x-csrf-token': that._csrfToken
         },
         body: JSON.stringify(data)
-      }).then((resp) => resp.json()).then((ret) => {
-        if (ret.errors != null && ret.errors.length > 0) reject(ret.errors[0])
-        else resolve()
       })
-    }, (error) => { reject(error) })
+        .then(resp => resp.json())
+        .then(ret => {
+          if (ret.errors != null && ret.errors.length > 0) {
+            reject(new Error(ret.errors[0]))
+          } else {
+            resolve()
+          }
+        })
+        .catch(error => {
+          reject(new Error(error.message))
+        })
+    })
   }
 
   doChangesAPI (mapId, changes) {
@@ -581,19 +605,7 @@ class MindmeisterBackground {
     })
   }
   getFileByUrl (fileUrl) {
-    /*let that = this
-    return new Promise((resolve, reject) => {
-      var xhr = new XMLHttpRequest()
-      xhr.open('GET', fileUrl, true)
-      xhr.responseType = 'arraybuffer'
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-          resolve(xhr.response)
-        }
-      }
-      xhr.send()
-    })*/
-    let that = this
+    // let that = this
     return new Promise((resolve, reject) => {
       fetch(fileUrl).then((response) => response.arrayBuffer()).then((response) => {
         resolve(response)
@@ -635,7 +647,7 @@ class MindmeisterBackground {
           data.append('access_token', token)
           data.append('method', 'mm.maps.import')
           data.append('file', blob)
-          let d = new URLSearchParams(data)
+          // let d = new URLSearchParams(data)
           fetch(url, {
             method: 'POST',
             body: data
@@ -645,7 +657,7 @@ class MindmeisterBackground {
               if (json.rsp != null) resolve(json.rsp.map.id)
               else if (json.err != null) reject(json.err.msg)
             })
-        .catch(err => reject(err))
+            .catch(err => reject(err))
           /* var blob = new File([file], 'Template.mind')
           var data = new FormData()
           data.append('access_token', token)
@@ -667,7 +679,6 @@ class MindmeisterBackground {
   }
 
   linkShare (mapId) {
-
     let that = this
     return new Promise((resolve, reject) => {
       fetch(`https://www.mindmeister.com/sharing/link_share.json?root_id=${parseInt(mapId)}&editor=panda&on=true&write=true`, {
@@ -676,11 +687,19 @@ class MindmeisterBackground {
           'Content-Type': 'application/json;charset=UTF-8',
           'x-csrf-token': that._csrfToken
         }
-      }).then((resp) => resp.json()).then((ret) => {
-          if (ret.url == null) reject('error')
-          else resolve('ok')
+      })
+        .then((resp) => resp.json())
+        .then((ret) => {
+          if (ret.url == null) {
+            reject(new Error('error'))
+          } else {
+            resolve('ok')
+          }
         })
-      }, (error) => { reject(error) })
+        .catch((error) => {
+          reject(error)
+        })
+    })
   }
 
   linkShareAPI (mapId) {

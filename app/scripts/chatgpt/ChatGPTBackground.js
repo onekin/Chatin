@@ -17,7 +17,7 @@ class ChatGPTBackground {
           } else if (message.method === 'getMode') {
             that.getMode().then((mode) => sendResponse({response: mode}), (error) => sendResponse({error: error.message}))
           } else if (message.method === 'setMode') {
-            that.setMode(message.args.mode).then((rsp) => sendResponse({response: true}), (error) => sendResponse({error: true}))
+            that.setMode(message.args.mode).then((rsp) => sendResponse({response: true}), () => sendResponse({error: true}))
           } else if (message.method === 'getApiKey') {
             that.getApiKey().then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'setApiKey') {

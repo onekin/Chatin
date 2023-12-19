@@ -1,6 +1,6 @@
 
 const MindmeisterClient = require('./mindmeister/MindmeisterClient')
-const ChatGPTClient = require('./chatgpt/ChatGPTClient')
+// const ChatGPTClient = require('./chatgpt/ChatGPTClient')
 const MindmapManager = require('./chatin/MindmapManager')
 const HomePageManager = require('./chatin/HomePageManager')
 const Alerts = require('./utils/Alerts')
@@ -21,12 +21,12 @@ class ContentScript {
 
   init () {
     MindmeisterClient.checkToken().then(() => {
-      //ChatGPTClient.getApiKey().then(() => {
-        this.initUrlManager()
-      //}, (error) => {
+      // ChatGPTClient.getApiKey().then(() => {
+      this.initUrlManager()
+      // }, (error) => {
       //  Alerts.showErrorToast('Chatin requires an ChatGPT API key')
-      //})
-    }, (error) => {
+      // })
+    }, () => {
       Alerts.showErrorToast('Chatin requires that you authorize it to interact with your Mindmeister account')
     })
   }

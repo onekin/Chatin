@@ -16,14 +16,14 @@ class Intervention {
     return this._issue
   }
 
-  get nodeId() {
+  get nodeId () {
     return this._nodeId
   }
-  addEffectivenessReason(reason) {
+  addEffectivenessReason (reason) {
     this._effectivenessReasons.push(reason)
   }
 
-  addFeasibilityReason(reason) {
+  addFeasibilityReason (reason) {
     this._feasibilityReasons.push(reason)
   }
 

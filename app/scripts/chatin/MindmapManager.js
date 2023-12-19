@@ -1,6 +1,7 @@
 
 const MindmapWrapper = require('../mindmeister/wrapper/MindmapWrapper')
 const TemplateNodes = require('./TemplateNodes')
+const ModelDefaultValues = require('./ModelDefaultValues')
 const MindmeisterClient = require('../mindmeister/MindmeisterClient')
 const ChatGPTClient = require('../chatgpt/ChatGPTClient')
 const Alerts = require('../utils/Alerts')
@@ -37,7 +38,7 @@ class MindmapManager {
         enabled: false
       }
     ]
-    this._style = null
+    this._styles = null
     this._variables = []
     this._scopingAnalysis = null
     this._mindmapParser = null
@@ -80,12 +81,18 @@ class MindmapManager {
       let found = true
       Object.keys(TemplateNodes).forEach((k) => {
         let nodes = MindmapWrapper.getNodesByText(TemplateNodes[k])
-        if (nodes == null || nodes.length === 0) found = false
+        if (nodes == null || nodes.length === 0) {
+          found = false
+        }
       })
-      if (found) resolve()
-      else reject()
+      if (found) {
+        resolve()
+      } else {
+        reject(new Error('Template nodes not found in the map'))
+      }
     })
   }
+
   initChangeManager () {
     let that = this
     let rootNode = MindmapWrapper.getNodeById(this._mapId)
@@ -99,7 +106,7 @@ class MindmapManager {
     let obs = new MutationObserver((mutations) => {
       let newNodes = mutations.find((m) => {
         let addedNodes = Array.from(m.addedNodes)
-        let mapNodes = addedNodes.find((n) => { return n.hasAttributes('data-id') } )
+        let mapNodes = addedNodes.find((n) => { return n.hasAttributes('data-id') })
         return mapNodes != null
       })
       if (newNodes) {
@@ -230,11 +237,29 @@ class MindmapManager {
     // todo -> check node style and icon
     return questionNodes
   }
+  getStyle () {
+    let that = this
+    let style = that._styles
+    let numberOfItems, description
+    let numberOfItemsElement = style.find((s) => { return s.name === 'Number of items' })
+    let descriptionElement = style.find((s) => { return s.name === 'Description' })
+    if (ModelDefaultValues.Description.initial === descriptionElement.value) {
+      description = ModelDefaultValues.Description.default
+    } else {
+      description = descriptionElement.value
+    }
+    if (ModelDefaultValues.NumberOfItems.initial === numberOfItemsElement.value) {
+      numberOfItems = ModelDefaultValues.NumberOfItems.default
+    } else {
+      numberOfItems = numberOfItemsElement.value
+    }
+    return 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
+  }
   performQuestion (node) {
     Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
     let that = this
     this.parseMap().then(() => {
-      let question = node.text + that._style
+      let question = node.text + that.getStyle()
       ChatGPTClient.performQuestion(question).then((response) => {
         let concepts = that.parseChatGPTAnswer(response)
         if (concepts.length === 0) {
@@ -266,11 +291,17 @@ class MindmapManager {
     let pattern = /\d(\)|\.)[^:\-\.\n$]+(:|\-|\.|\n|$)/g
     let result = answer.match(pattern)
     if (result == null || result.length === 0) return []
-    let resultNew = result.map((r) => r.replace(/\)/g, '\\)').replace(/\./g, '\\.').replace(/\*/g, '\\*'))
+    let resultNew = result.map((r) =>
+      r.replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)')
+        .replace(/\./g, '\\.')
+        .replace(/\*/g, '\\*')
+        .replace(/\-/g, '\\-')
+    )
     let regexp = new RegExp('(' + resultNew.join('|') + ')', 'gi')
     let parts = answer.split(regexp)
     result.forEach((r, ind) => {
-      let whole = r.replace(/\d(\)|\.)/, '').replace(':', '').replace('-', '')
+      let whole = r.replace(/\d(\)|\.)/, '').replace(':', '').replace('-', '').replaceAll('*', '')
       nodes.push({label: whole.trim(), description: parts[ind * 2 + 2].trim()})
     })
     return nodes
@@ -319,8 +350,8 @@ class MindmapManager {
           that.onClickAnswerSolutionMapping(uiNode, issue)
           break
       }
-    }).catch( (error) => {
-      Alerts.showErrorToast('An error occurred')
+    }).catch((error) => {
+      Alerts.showErrorToast('An error occurred' + error)
     })
   }
   onClickAnswerProblemDeepen (uiNode, issue) {
@@ -423,8 +454,7 @@ class MindmapManager {
         Alerts.showErrorToast(`Missing variables: ${missingItems}`)
       } else {
         MindmeisterClient.doActions(this._mapId,
-          [{text: question1, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier},
-                    {text: question2, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
+          [{text: question1, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}, {text: question2, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
           [{id: issue.nodeId, image: IconsMap['tick-enabled']}]
         ).then(() => {
           Alerts.closeLoadingWindow()
@@ -461,7 +491,28 @@ class MindmapManager {
     })
     this._variables = variables
   }
+
   parseStyle () {
+    this._styles = []
+    let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.QUESTION_MODEL)
+    if (questionModelNodes == null || questionModelNodes.length === 0) return // todo
+    let questionModelNode = questionModelNodes[0]
+    let stylesNodes = questionModelNode.getChildrenWithText(TemplateNodes.STYLE)
+    if (stylesNodes == null || stylesNodes.length === 0) return // todo
+    let stylesNode = stylesNodes[0]
+    let definedStyles = stylesNode.children
+    let styles = []
+    definedStyles.forEach((v) => {
+      let styleName = v.text
+      let styleChildren = v.children
+      if (styleChildren == null || styleChildren.length === 0) return
+      let firstChild = styleChildren[0]
+      styles.push({name: styleName, value: firstChild.text})
+    })
+    this._styles = styles
+  }
+
+  parseStyle2 () {
     this._style = null
     let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.QUESTION_MODEL)
     if (questionModelNodes == null || questionModelNodes.length === 0) return // todo
@@ -473,6 +524,7 @@ class MindmapManager {
     if (styleNodeChildren == null || styleNodeChildren.length === 0) return // todo
     this._style = styleNodeChildren[0].text
   }
+
   parseScopingAnalysis () {
     this.parseFirstLevelProblems()
   }
@@ -572,7 +624,7 @@ class MindmapManager {
     this._processModes.forEach((m) => {
       if (m.mindmapNode == null) return
       let icon = m.mindmapNode.emojiIcon
-      if (icon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g,'')) m.enabled = true
+      if (icon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g, '')) m.enabled = true
       else m.enabled = false
     })
   }
@@ -598,7 +650,7 @@ class MindmapManager {
     return items.map((it) => it.replace(/</g, '').replace(/>/g, '').trim())
   }
   static createRegexpFromPrompt (text) {
-    let questionPrompt = text.replace(/<[^>]+>/g, '.+').replace(/\?/g, '\?')
+    let questionPrompt = text.replace(/<[^>]+>/g, '.+').replace(/\?/g, '?')
     let promptRegExp = new RegExp(questionPrompt, 'gi')
     return promptRegExp
   }

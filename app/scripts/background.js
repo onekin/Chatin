@@ -13,10 +13,10 @@ class Background {
     this._chatGPTManager = new ChatGPTBackground()
     this._chatGPTManager.init()
 
-    /*chrome.browserAction.onClicked.addListener(function () {
+    /* chrome.browserAction.onClicked.addListener(function () {
       var newURL = chrome.extension.getURL('pages/options.html')
       chrome.tabs.create({ url: newURL })
-    })*/
+    }) */
   }
 }
 

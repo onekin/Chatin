@@ -22,7 +22,7 @@ class Utils {
         // todo consider different content-types
         if (r.headers['Content-Type'] == null || r.headers['Content-Type'].includes('application/json')) {
           r['body'] = opts.params
-        } else if (r.headers['Content-Type'].includes('application/x-www-form-urlencoded')){
+        } else if (r.headers['Content-Type'].includes('application/x-www-form-urlencoded')) {
           let formBody = []
           for (let property in opts.params) {
             let encodedKey = encodeURIComponent(property)
@@ -59,7 +59,10 @@ class Utils {
         reqOptions.attempt++
         return that.performRequest(opts, reqOptions)
       } else {
-        return Promise.reject({message: 'Request error', cause: {code: response.status}, response: response})
+        let error = new Error('Request error')
+        error.cause = { code: response.status }
+        error.response = response
+        return Promise.reject(error)
       }
     }
   }
@@ -69,10 +72,10 @@ class Utils {
     let newText = ''
     let remainder = text
     do {
-      newText = newText + remainder.substring(0, lineChars-1)
+      newText = newText + remainder.substring(0, lineChars - 1)
       remainder = remainder.substring(lineChars - 1)
       let nextBlank = remainder.indexOf(' ')
-      if (nextBlank == -1){
+      if (nextBlank === -1) {
         newText += remainder
         remainder = ''
       } else {
