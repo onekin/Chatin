@@ -160,45 +160,47 @@ class ChatGPTBackground {
   /**
    * API KEY MODE
    */
-  performQuestionAPIKey (question) {
+  performQuestionAPIKey(question) {
     let that = this
     return new Promise((resolve, reject) => {
-      if (that._apiKey == null || that._apiKey === '') {
-        reject(new Error('Missing API key. Please, provide one in the options page.'))
-        return
-      }
-      let items = {
-        'model': 'gpt-4-1106-preview',
-        'messages': [
-          {'role': 'user',
-            'content': question}
-        ],
-        'temperature': 0.7
-      }
-      let opts = {
-        method: 'POST',
-        url: 'https://api.openai.com/v1/chat/completions',
-        params: JSON.stringify(items),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + that._apiKey
+      that.getApiKey().then((apiKey) => {
+        if (apiKey == null || apiKey === '') {
+          reject(new Error('Missing API key. Please, provide one in the options page.'))
+          return
         }
-      }
-      Utils.performRequest(opts).then((resp) => resp.json()).then((ret) => {
-        if (ret.choices == null || ret.choices.length === 0) reject(new Error('No answer from ChatGPT'))
-        else resolve(ret.choices[0].message.content)
-      }).catch((error) => {
-        try {
-          error.response.json().then((err) => {
-            if (err.error != null && err.error.message != null) reject(new Error(err.error.message))
-            else reject(new Error('Unknown ChatGPT error'))
-          })
-        } catch (e) {
-          reject(new Error('Unparsable response from ChatGPT'))
+        let items = {
+          'model': 'gpt-4-1106-preview',
+          'messages': [
+            {'role': 'user', 'content': question}
+          ],
+          'temperature': 0.7
         }
+        let opts = {
+          method: 'POST',
+          url: 'https://api.openai.com/v1/chat/completions',
+          params: JSON.stringify(items),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          }
+        }
+        Utils.performRequest(opts).then((resp) => resp.json()).then((ret) => {
+          if (ret.choices == null || ret.choices.length === 0) reject(new Error('No answer from ChatGPT'))
+          else resolve(ret.choices[0].message.content)
+        }).catch((error) => {
+          try {
+            error.response.json().then((err) => {
+              if (err.error != null && err.error.message != null) reject(new Error(err.error.message))
+              else reject(new Error('Unknown ChatGPT error'))
+            })
+          } catch (e) {
+            reject(new Error('Unparsable response from ChatGPT'))
+          }
+        })
       })
     })
   }
+
   getApiKey () {
     return new Promise((resolve, reject) => {
       chrome.storage.sync.get(ChatGPTAPIKeyStorageKey, (options) => {

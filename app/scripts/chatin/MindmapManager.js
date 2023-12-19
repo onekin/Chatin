@@ -546,6 +546,7 @@ class MindmapManager {
       }
     })
     this._scopingAnalysis = problems
+    console.log('Scoping analysis: ' + this._scopingAnalysis)
   }
   parseProblem (problem) {
     let that = this
