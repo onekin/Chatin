@@ -269,6 +269,7 @@ class MindmapManager {
           console.log(response)
           return
         }
+        const labels = concepts.map((c) => { return c.label })
         let nodes = concepts.map((c) => {
           return {
             text: c.label,
@@ -280,6 +281,14 @@ class MindmapManager {
         })
         MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
           Alerts.closeLoadingWindow()
+          if (this._processModes[0].enabled) {
+            let repeatedItems = labels.filter(label => that._problems.includes(label))
+            if (repeatedItems.length === 1) {
+              Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
+            } else if (repeatedItems.length > 1) {
+              Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+            }
+          }
         })
       }).catch((error) => {
         if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
@@ -511,19 +520,6 @@ class MindmapManager {
       styles.push({name: styleName, value: firstChild.text})
     })
     this._styles = styles
-  }
-
-  parseStyle2 () {
-    this._style = null
-    let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.QUESTION_MODEL)
-    if (questionModelNodes == null || questionModelNodes.length === 0) return // todo
-    let questionModelNode = questionModelNodes[0]
-    let styleNodes = questionModelNode.getChildrenWithText(TemplateNodes.STYLE)
-    if (styleNodes == null || styleNodes.length === 0) return // todo
-    let styleNode = styleNodes[0]
-    let styleNodeChildren = styleNode.children
-    if (styleNodeChildren == null || styleNodeChildren.length === 0) return // todo
-    this._style = styleNodeChildren[0].text
   }
 
   parseScopingAnalysis () {
