@@ -42,6 +42,7 @@ class MindmapManager {
     this._variables = []
     this._scopingAnalysis = null
     this._mindmapParser = null
+    this._problems = []
   }
   init () {
     let that = this
@@ -530,16 +531,20 @@ class MindmapManager {
   }
   parseFirstLevelProblems () {
     let that = this
+    that._problems = []
     let scopingAnalysisNodes = this._mindmapParser.getNodesWithText(TemplateNodes.SCOPING_ANALYSIS)
     if (scopingAnalysisNodes == null || scopingAnalysisNodes.length === 0) return // todo
     let scopingAnalysisNode = scopingAnalysisNodes[0]
     let scopingAnalysisNodeChildren = scopingAnalysisNode.children
-    let problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
+    // let problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     let problems = []
     scopingAnalysisNodeChildren.forEach((c) => {
+      console.log(c.text)
+      const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
       if (problemPromptRE.test(c.text)) {
         c.children.forEach((p) => {
           let pro = new Problem(p.text, p.id)
+          that._problems.push(p.text)
           problems.push(pro)
           that.parseProblem(pro)
         })
@@ -547,6 +552,7 @@ class MindmapManager {
     })
     this._scopingAnalysis = problems
     console.log('Scoping analysis: ' + this._scopingAnalysis)
+    console.log('Problems: ' + that._problems)
   }
   parseProblem (problem) {
     let that = this
@@ -558,6 +564,7 @@ class MindmapManager {
       if (subproblemsPromptRE.test(c.text)) {
         c.children.forEach((p) => {
           let subP = new Problem(p.text, p.id, problem)
+          that._problems.push(p.text)
           problem.addSubproblem(subP)
           that.parseProblem(subP)
         })
