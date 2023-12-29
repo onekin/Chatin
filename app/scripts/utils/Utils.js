@@ -85,6 +85,31 @@ class Utils {
     } while (remainder.length > 0)
     return newText
   }
+
+  static extractNumbersFromClassNames (text) {
+    // Regular expression to match the desired pattern
+    const regex = /react-popover-trigger-mapeditor-popover-contextmenu-attachment-(\d+)/g
+    let matches
+    const numbers = []
+    // Iterate over each match and extract the number
+    while ((matches = regex.exec(text)) !== null) {
+      numbers.push(matches[1]) // The first capturing group contains the number
+    }
+    return numbers
+  }
+
+  static findParentWithAttribute (element, attribute) {
+    while (element) {
+      // Check if the element has the attribute
+      if (element.hasAttribute(attribute)) {
+        return element
+      }
+      // Move up to the next parent element
+      element = element.parentElement
+    }
+    // If the loop completes without returning, no matching parent was found
+    return null
+  }
 }
 
 module.exports = Utils
