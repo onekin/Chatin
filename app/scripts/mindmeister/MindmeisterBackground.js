@@ -237,16 +237,6 @@ class MindmeisterBackground {
     })
   }
 
-  arrayBufferToBase64(buffer) {
-    var binary = '';
-    var bytes = new Uint8Array(buffer);
-    var len = bytes.byteLength;
-    for (var i = 0; i < len; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-  }
-
   uploadImage (mapId, image) {
     let that = this
     return new Promise((resolve, reject) => {
@@ -676,63 +666,8 @@ class MindmeisterBackground {
               else if (json.err != null) reject(json.err.msg)
             })
             .catch(err => reject(err))
-          /* var blob = new File([file], 'Template.mind')
-          var data = new FormData()
-          data.append('access_token', token)
-          data.append('method', 'mm.maps.import')
-          data.append('file', blob)
-          var xhr = new XMLHttpRequest()
-          xhr.addEventListener('readystatechange', function () {
-            if (this.readyState === 4) {
-              var response = JSON.parse(this.responseText)
-              if (response.rsp != null) resolve(response.rsp.map.id)
-              else if (response.err != null) reject(response.err.msg)
-            }
-          })
-          xhr.open('POST', 'https://www.mindmeister.com/services/rest/oauth2')
-          xhr.send(data) */
         })
       }, (error) => { reject(error) })
-    })
-  }
-
-  getAttachedFile (fileId) {
-    let that = this
-    return new Promise((resolve, reject) => {
-      that.getToken().then((token) => {
-        var myHeaders = new Headers()
-        myHeaders.append('accept', 'text/plain')
-        var requestOptions = {
-          method: 'GET',
-          headers: myHeaders,
-          redirect: 'follow'
-        }
-
-        fetch('https://www.mindmeister.com/api/v2/files/' + fileId + '/attachment?access_token=' + token, requestOptions)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`)
-            } else {
-              return response.arrayBuffer()
-            }
-          })
-          .then(arrayBuffer => {
-            const string = that.arrayBufferToBase64(arrayBuffer)
-            resolve(string)
-          })
-          /* .then(blob => {
-            return blob.arrayBuffer()
-          })
-          .then(arrayBuffer => {
-            resolve(arrayBuffer)
-          }) */
-          .catch(error => {
-            console.error('Error in processing PDF: ', error)
-            reject(error)
-          })
-      }).catch(error => {
-        reject(error)
-      })
     })
   }
 

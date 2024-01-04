@@ -1,4 +1,6 @@
 // import * as pdfjsLib from 'pdfjs-dist/webpack';
+const LLMTextUtils = require('../utils/LLMTextUtils')
+const OpenAIManager = require('../llm/openAI/OpenAIManager')
 const pdfjsLib = require('pdfjs-dist')
 const MindmapWrapper = require('../mindmeister/wrapper/MindmapWrapper')
 const TemplateNodes = require('./TemplateNodes')
@@ -522,12 +524,13 @@ class MindmapManager {
       MindmeisterClient.getToken().then(token => {
         console.log(token)
         var myHeaders = new Headers()
-        myHeaders.append('accept', 'text/plain')
+        myHeaders.append('accept', 'application/pdf') // Changed to 'application/pdf'
         var requestOptions = {
           method: 'GET',
           headers: myHeaders,
           redirect: 'follow'
         }
+
         fetch('https://www.mindmeister.com/api/v2/files/' + id + '/attachment?access_token=' + token, requestOptions)
           .then(response => {
             if (!response.ok) {
@@ -537,49 +540,42 @@ class MindmapManager {
             }
           })
           .then(pdfData => {
-            PDFJS.getDocument({ data: pdfData }).promise.then(pdfDocument => {
-              console.log('Loaded PDF with ' + pdfDocument.numPages + ' pages.')
-              // Processing the first page
-              pdfDocument.getPage(2).then(page => {
-                page.getTextContent().then(textContent => {
-                  console.log(textContent)
-                  // Concatenate the 'str' property of each item for raw text
-                  let textStrings = textContent.items.map(item => item.str).join('\n')
-                  console.log(textStrings)
-                  // Here you can continue with your processing, for example:
-                  // Call ChatGPT with the extracted text
-                  // that.callChatGPTWithExtractedText(textStrings);
-                })
-              }).catch(error => {
-                console.error('Error loading page from PDF:', error)
-                Alerts.showErrorToast('Error loading page from PDF: ' + error.message)
+            PDFJS.getDocument({ data: pdfData }).promise.then(async pdfDocument => {
+              let documents = []
+              documents = await LLMTextUtils.loadDocument(pdfDocument)
+              ChatGPTClient.getApiKey().then((key) => {
+                if (key !== null && key !== '') {
+                  let callback = (json) => {
+                    console.log(json)
+                    Alerts.closeLoadingWindow()
+                  }
+                  OpenAIManager.pdfBasedQuestion({
+                    apiKey: key,
+                    documents: documents,
+                    prompt: prompt,
+                    callback: callback
+                  })
+                } else {
+                  Alerts.showErrorToast('No API key found for ChatGPT')
+                }
               })
             }).catch(error => {
-              console.error('Error loading PDF:', error)
-              Alerts.showErrorToast('Error loading PDF: ' + error.message)
+              console.error('Error in processing PDF: ', error)
+              Alerts.showErrorToast('Error in processing PDF: ' + error.message)
             })
           })
           .catch(error => {
-            console.error('Error in processing PDF: ', error)
-            reject(error)
+            console.error('Error getting attached file:', error)
+            Alerts.showErrorToast('Error getting attached file: ' + error.message)
           })
       }).catch(error => {
-        console.error('Error getting attached file:', error)
-        Alerts.showErrorToast('Error getting attached file: ' + error.message)
+        console.error('Error getting token:', error)
+        Alerts.showErrorToast('Error getting token: ' + error.message)
       })
     }).catch(error => {
       console.error('Error parsing map:', error)
       Alerts.showErrorToast('Error parsing map: ' + error.message)
     })
-  }
-
-  binaryStringToUint8Array (binaryString) {
-    const length = binaryString.length
-    const bytes = new Uint8Array(length)
-    for (let i = 0; i < length; i++) {
-      bytes[i] = binaryString.charCodeAt(i)
-    }
-    return bytes
   }
 
   parseChatGPTAnswer (answer) {
