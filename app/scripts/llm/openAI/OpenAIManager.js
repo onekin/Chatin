@@ -27,10 +27,7 @@ class OpenAIManager {
             callback(jsonObject)
           }
         } catch (err) {
-          Alerts.errorAlert({
-            text: 'Please try again. Try to repeat the question. Provided answer has been: ' + retrievedJSON,
-            title: 'Error parsing the answer'
-          })
+          Alerts.showErrorToast('Please try again. Try to repeat the question. Provided answer has been: ' + retrievedJSON)
         }
       }
     })

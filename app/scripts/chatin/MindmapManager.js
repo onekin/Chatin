@@ -1,7 +1,6 @@
 // import * as pdfjsLib from 'pdfjs-dist/webpack';
 const LLMTextUtils = require('../utils/LLMTextUtils')
 const OpenAIManager = require('../llm/openAI/OpenAIManager')
-const pdfjsLib = require('pdfjs-dist')
 const MindmapWrapper = require('../mindmeister/wrapper/MindmapWrapper')
 const TemplateNodes = require('./TemplateNodes')
 const ModelDefaultValues = require('./ModelDefaultValues')
@@ -17,7 +16,7 @@ const PromptStyles = require('./PromptStyles')
 const IconsMap = require('./IconsMap')
 const Utils = require('../utils/Utils')
 // const pdfjsLib = require('pdfjs-dist/webpack.mjs')
-console.log('pdfjsLib:', pdfjsLib)
+// console.log('pdfjsLib:', pdfjsLib)
 
 class MindmapManager {
   constructor () {
@@ -548,6 +547,48 @@ class MindmapManager {
                   let callback = (json) => {
                     console.log(json)
                     Alerts.closeLoadingWindow()
+                    const { gptItemsNodes, pdfBasedItemsNodes } = that.parseChatGPTAnswerFromJSON(json)
+                    console.log('gptProblems: ' + gptItemsNodes)
+                    console.log('otherProblems: ' + pdfBasedItemsNodes)
+                    if (gptItemsNodes.length === 0 && pdfBasedItemsNodes.length === 0) {
+                      Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
+                      console.log(`ChatGPT's answer:`)
+                      console.log(json)
+                    }
+                    // GPT Answers
+                    const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
+                    const otherProblemsLabels = pdfBasedItemsNodes.map((c) => { return c.label })
+                    const labels = gptProblemsLabels.concat(otherProblemsLabels)
+                    let gptProblemsNodes = gptItemsNodes.map((c) => {
+                      return {
+                        text: c.label,
+                        style: PromptStyles.AnswerItem,
+                        image: IconsMap['tick-disabled'],
+                        parentId: node.id,
+                        note: c.description
+                      }
+                    })
+                    let otherProblemsNodes = pdfBasedItemsNodes.map((c) => {
+                      return {
+                        text: c.label,
+                        style: PromptStyles.AnswerItemPDFBased,
+                        image: IconsMap['tick-disabled'],
+                        parentId: node.id,
+                        note: c.description + '\n\n EXCERPT FROM ' + name + ':\n' + c.excerpt
+                      }
+                    })
+                    const nodes = gptProblemsNodes.concat(otherProblemsNodes)
+                    MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
+                      Alerts.closeLoadingWindow()
+                      if (this._processModes[0].enabled) {
+                        let repeatedItems = labels.filter(label => that._problems.includes(label))
+                        if (repeatedItems.length === 1) {
+                          Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
+                        } else if (repeatedItems.length > 1) {
+                          Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+                        }
+                      }
+                    })
                   }
                   OpenAIManager.pdfBasedQuestion({
                     apiKey: key,
@@ -588,6 +629,7 @@ class MindmapManager {
         .replace(/\)/g, '\\)')
         .replace(/\./g, '\\.')
         .replace(/\*/g, '\\*')
+        // eslint-disable-next-line no-useless-escape
         .replace(/\-/g, '\\-')
     )
     let regexp = new RegExp('(' + resultNew.join('|') + ')', 'gi')
@@ -597,6 +639,28 @@ class MindmapManager {
       nodes.push({label: whole.trim(), description: parts[ind * 2 + 2].trim()})
     })
     return nodes
+  }
+  /**
+   * Parse answers
+   */
+  parseChatGPTAnswerFromJSON (json) {
+    const gptItems = Array.from(Object.values(json)[0]).filter(item =>
+      Object.keys(item).some(key => key.startsWith('GPT_'))
+    )
+    const pdfBasedItems = Array.from(Object.values(json)[0]).filter(item =>
+      !Object.keys(item).some(key => key.startsWith('GPT_'))
+    )
+    const gptItemsNodes = []
+    const pdfBasedItemsNodes = []
+    gptItems.forEach((item) => {
+      let name = Utils.findValuesEndingWithName(item, 'name')
+      gptItemsNodes.push({ label: name, description: item.description })
+    })
+    pdfBasedItems.forEach((item) => {
+      let name = Utils.findValuesEndingWithName(item, 'name')
+      pdfBasedItemsNodes.push({label: name, excerpt: item.excerpt, description: item.excerpt})
+    })
+    return {gptItemsNodes, pdfBasedItemsNodes}
   }
   /**
    * Management of answer nodes
@@ -757,7 +821,10 @@ class MindmapManager {
   getAnswerNodes () {
     // green nodes with tick (either disabled or enabled) icon
     let answerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItem.backgroundColor)
+    let pdfBasedAnswerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItemPDFBased.backgroundColor)
     let questionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(answerNodesColor)
+    let pdfBasedQuestionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(pdfBasedAnswerNodesColor)
+    questionNodes = questionNodes.concat(pdfBasedQuestionNodes)
     questionNodes = questionNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g, '') || n.emojiIcon === IconsMap['tick-disabled'].mindmeisterName.replace(/:/g, '')) })
     return questionNodes
   }
