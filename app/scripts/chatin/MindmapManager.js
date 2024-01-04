@@ -1,4 +1,5 @@
-
+// import * as pdfjsLib from 'pdfjs-dist/webpack';
+const pdfjsLib = require('pdfjs-dist')
 const MindmapWrapper = require('../mindmeister/wrapper/MindmapWrapper')
 const TemplateNodes = require('./TemplateNodes')
 const ModelDefaultValues = require('./ModelDefaultValues')
@@ -13,6 +14,8 @@ const Problem = require('./model/Problem')
 const PromptStyles = require('./PromptStyles')
 const IconsMap = require('./IconsMap')
 const Utils = require('../utils/Utils')
+// const pdfjsLib = require('pdfjs-dist/webpack.mjs')
+console.log('pdfjsLib:', pdfjsLib)
 
 class MindmapManager {
   constructor () {
@@ -45,9 +48,8 @@ class MindmapManager {
     this._problems = []
   }
 
-  kudeatzaileakHasieratu () {
+  kudeatzaileakHasieratu (that) {
     const checkDOM = setInterval(function () {
-      let that = this
       // Options for the observer (which mutations to observe)
       const config = { attributes: true, childList: true, subtree: true }
       // Callback function to execute when mutations are observed
@@ -87,7 +89,7 @@ class MindmapManager {
                           )
                           console.log(targetElement.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode)
                           // Find the initial element by its unique characteristics
-                          let initialElement = document.querySelector('div.kr-text[style*="display: flex"][style*="background-color: rgb(0, 170, 255)"]');
+                          let initialElement = document.querySelector('div.kr-text[style*="display: flex"][style*="background-color: rgb(0, 170, 255)"]')
                           let parentElement = Utils.findParentWithAttribute(initialElement, 'data-id')
                           let questionNodeID = parentElement.getAttribute('data-id')
                           let questionNode = MindmapWrapper.getNodeById(questionNodeID)
@@ -152,7 +154,7 @@ class MindmapManager {
         // this.initAnswerManager()
         that.initChangeManager()
       }, 5000)
-      this.kudeatzaileakHasieratu()
+      this.kudeatzaileakHasieratu(that)
     })
   }
   isChatinMap () {
@@ -513,42 +515,73 @@ class MindmapManager {
     Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
     let that = this
     this.parseMap().then(() => {
-      let question = that.getPromptForPDFBasedQuestion(node.text)
-      ChatGPTClient.performQuestion(question).then((response) => {
-        let concepts = that.parseChatGPTAnswer(response)
-        if (concepts.length === 0) {
-          Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
-          console.log(`ChatGPT's answer:`)
-          console.log(response)
-          return
+      let prompt = that.getPromptForPDFBasedQuestion(node.text)
+      console.log('prompt: ' + prompt)
+      // Ensure workerSrc is set before loading the document
+      PDFJS.workerSrc = chrome.runtime.getURL('resources/pdfjs/build/pdf.worker.js')
+      MindmeisterClient.getToken().then(token => {
+        console.log(token)
+        var myHeaders = new Headers()
+        myHeaders.append('accept', 'text/plain')
+        var requestOptions = {
+          method: 'GET',
+          headers: myHeaders,
+          redirect: 'follow'
         }
-        const labels = concepts.map((c) => { return c.label })
-        let nodes = concepts.map((c) => {
-          return {
-            text: c.label,
-            style: PromptStyles.AnswerItem,
-            image: IconsMap['tick-disabled'],
-            parentId: node.id,
-            note: c.description
-          }
-        })
-        MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
-          Alerts.closeLoadingWindow()
-          if (this._processModes[0].enabled) {
-            let repeatedItems = labels.filter(label => that._problems.includes(label))
-            if (repeatedItems.length === 1) {
-              Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
-            } else if (repeatedItems.length > 1) {
-              Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+        fetch('https://www.mindmeister.com/api/v2/files/' + id + '/attachment?access_token=' + token, requestOptions)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`)
+            } else {
+              return response.arrayBuffer()
             }
-          }
-        })
-      }).catch((error) => {
-        if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
-        else Alerts.showErrorToast(`ChatGPT error: ${error}`)
+          })
+          .then(pdfData => {
+            PDFJS.getDocument({ data: pdfData }).promise.then(pdfDocument => {
+              console.log('Loaded PDF with ' + pdfDocument.numPages + ' pages.')
+              // Processing the first page
+              pdfDocument.getPage(2).then(page => {
+                page.getTextContent().then(textContent => {
+                  console.log(textContent)
+                  // Concatenate the 'str' property of each item for raw text
+                  let textStrings = textContent.items.map(item => item.str).join('\n')
+                  console.log(textStrings)
+                  // Here you can continue with your processing, for example:
+                  // Call ChatGPT with the extracted text
+                  // that.callChatGPTWithExtractedText(textStrings);
+                })
+              }).catch(error => {
+                console.error('Error loading page from PDF:', error)
+                Alerts.showErrorToast('Error loading page from PDF: ' + error.message)
+              })
+            }).catch(error => {
+              console.error('Error loading PDF:', error)
+              Alerts.showErrorToast('Error loading PDF: ' + error.message)
+            })
+          })
+          .catch(error => {
+            console.error('Error in processing PDF: ', error)
+            reject(error)
+          })
+      }).catch(error => {
+        console.error('Error getting attached file:', error)
+        Alerts.showErrorToast('Error getting attached file: ' + error.message)
       })
+    }).catch(error => {
+      console.error('Error parsing map:', error)
+      Alerts.showErrorToast('Error parsing map: ' + error.message)
     })
   }
+
+  binaryStringToUint8Array (binaryString) {
+    const length = binaryString.length
+    const bytes = new Uint8Array(length)
+    for (let i = 0; i < length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    return bytes
+  }
+
   parseChatGPTAnswer (answer) {
     let nodes = []
     let pattern = /\d(\)|\.)[^:\-\.\n$]+(:|\-|\.|\n|$)/g

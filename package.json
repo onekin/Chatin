@@ -90,6 +90,7 @@
     "karma-jasmine": "^1.1.2",
     "karma-webpack": "^2.0.13",
     "natives": "^1.1.6",
+    "pdfjs-dist": "^4.0.379",
     "require-dir": "0.x.x",
     "selenium-standalone": "^6.15.3",
     "standard": "^10.0.2",
@@ -103,6 +104,7 @@
     "webpack-cli": "^4.7.0",
     "webpack-dev-server": "^3.11.2",
     "webpack-stream": "^6.1.2",
+    "worker-loader": "^3.0.8",
     "yargs": "^8.x.x"
   }
 }

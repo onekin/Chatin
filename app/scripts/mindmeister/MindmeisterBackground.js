@@ -1,7 +1,10 @@
+// const pdfjsLib = require('pdfjs-dist/legacy/build/pdf')
+// import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 
 const APIClientId = 'XxUt7w0Xri-9hmIvvRNaIbMe4HrOml2giLDT5qFT5W8'
 const TokenStorageKey = 'MINDMEISTER_ACCESS_TOKEN'
 const Utils = require('../utils/Utils')
+
 // const PromptStyles = require('../chatin/PromptStyles')
 
 class MindmeisterBackground {
@@ -35,6 +38,10 @@ class MindmeisterBackground {
             that.getMap(message.args.mapId).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'createMindmapFromTemplate') {
             that.createMindmapFromTemplate(message.args.templateFileUrl).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
+          } else if (message.method === 'getAttachedFile') {
+            that.getAttachedFile(message.args.fileId).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
+          } else if (message.method === 'getToken') {
+            that.getTokenJS().then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'getBelongingMap') {
             that.getBelongingMap(message.args.nodeId).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
             // } else if (message.method === 'changeNodeIcon') {
@@ -228,6 +235,16 @@ class MindmeisterBackground {
         })
       }, (error) => { reject(error) })
     })
+  }
+
+  arrayBufferToBase64(buffer) {
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
   }
 
   uploadImage (mapId, image) {
@@ -636,6 +653,7 @@ class MindmeisterBackground {
       })
     })
   }
+
   createMindmapFromTemplate (fileUrl) {
     let that = this
     return new Promise((resolve, reject) => {
@@ -675,6 +693,57 @@ class MindmeisterBackground {
           xhr.send(data) */
         })
       }, (error) => { reject(error) })
+    })
+  }
+
+  getAttachedFile (fileId) {
+    let that = this
+    return new Promise((resolve, reject) => {
+      that.getToken().then((token) => {
+        var myHeaders = new Headers()
+        myHeaders.append('accept', 'text/plain')
+        var requestOptions = {
+          method: 'GET',
+          headers: myHeaders,
+          redirect: 'follow'
+        }
+
+        fetch('https://www.mindmeister.com/api/v2/files/' + fileId + '/attachment?access_token=' + token, requestOptions)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`)
+            } else {
+              return response.arrayBuffer()
+            }
+          })
+          .then(arrayBuffer => {
+            const string = that.arrayBufferToBase64(arrayBuffer)
+            resolve(string)
+          })
+          /* .then(blob => {
+            return blob.arrayBuffer()
+          })
+          .then(arrayBuffer => {
+            resolve(arrayBuffer)
+          }) */
+          .catch(error => {
+            console.error('Error in processing PDF: ', error)
+            reject(error)
+          })
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  getTokenJS () {
+    let that = this
+    return new Promise((resolve, reject) => {
+      that.getToken().then((token) => {
+        resolve(token)
+      }).catch(error => {
+        reject(error)
+      })
     })
   }
 

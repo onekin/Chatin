@@ -25,7 +25,7 @@
     {
       "matches": ["https://www.mindmeister.com/*"],
       "exclude_matches": ["https://www.mindmeister.com/oauth2/*","https://www.mindmeister.com/*account/login*","https://www.mindmeister.com/robots.txt*"],
-      "js": ["scripts/content_script.js"],
+      "js": ["resources/pdfjs/build/pdf.js","scripts/content_script.js"],
       "css": ["styles/contentScript.css"],
       "run_at": "document_end"
     }

@@ -160,7 +160,7 @@ class ChatGPTBackground {
   /**
    * API KEY MODE
    */
-  performQuestionAPIKey(question) {
+  performQuestionAPIKey (question) {
     let that = this
     return new Promise((resolve, reject) => {
       that.getApiKey().then((apiKey) => {

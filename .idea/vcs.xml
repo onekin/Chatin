@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/lib/pdfjs" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/resources/pdf.js" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/resources/pdfjs" vcs="Git" />
   </component>
 </project>

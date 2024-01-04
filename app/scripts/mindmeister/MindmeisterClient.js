@@ -27,12 +27,21 @@ class MindmeisterClient {
   static getMap (mapId) {
     return this.processInBackground('getMap', {mapId: mapId})
   }
+
+  static getToken (mapId) {
+    return this.processInBackground('getToken', {})
+  }
+
   static createMindmapFromTemplate (templateFileUrl) {
     return this.processInBackground('createMindmapFromTemplate', {templateFileUrl: templateFileUrl})
   }
 
   static getBelongingMap (nodeId) {
     return this.processInBackground('getBelongingMap', {nodeId: nodeId})
+  }
+
+  static getAttachedFile (fileId) {
+    return this.processInBackground('getAttachedFile', {fileId: fileId})
   }
 
   static changeNodeIcon (mapId, nodeId, icon) {
