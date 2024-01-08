@@ -16,7 +16,6 @@ const PromptStyles = require('./PromptStyles')
 const IconsMap = require('./IconsMap')
 const Utils = require('../utils/Utils')
 // const pdfjsLib = require('pdfjs-dist/webpack.mjs')
-// console.log('pdfjsLib:', pdfjsLib)
 
 class MindmapManager {
   constructor () {
@@ -59,14 +58,11 @@ class MindmapManager {
           if (mutation.type === 'childList') {
             if (mutation.addedNodes) {
               if (mutation.addedNodes.length > 0) {
-                // console.log('added nodes', mutation.addedNodes)
                 const node = mutation.addedNodes[0]
                 if (node.innerText && node.innerText.includes('Attachments')) {
                   // Example usage
                   const classNames = Utils.extractNumbersFromClassNames(node.innerHTML)
                   if (classNames.length > 0) {
-                    console.log(classNames)
-                    console.log('YES')
                     const window = node.querySelector('.knightrider-scrollview-scrollelement')
                     const myDivs = window.querySelectorAll('div.kr-view.react-popover-trigger')
                     let attachments = []
@@ -83,19 +79,16 @@ class MindmapManager {
                           // You can handle the click event here.
                           event.stopPropagation()
                           // For example, you might want to log the button's ID to the console.
-                          let elements = document.querySelectorAll('.kr-text')
-                          let targetElement = Array.from(elements).find(el =>
+                          // let elements = document.querySelectorAll('.kr-text')
+                          /* let targetElement = Array.from(elements).find(el =>
                             el.style.display === 'flex' &&
                             el.style.backgroundColor === 'rgb(0, 170, 255)'
-                          )
-                          console.log(targetElement.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode)
+                          ) */
                           // Find the initial element by its unique characteristics
                           let initialElement = document.querySelector('div.kr-text[style*="display: flex"][style*="background-color: rgb(0, 170, 255)"]')
                           let parentElement = Utils.findParentWithAttribute(initialElement, 'data-id')
                           let questionNodeID = parentElement.getAttribute('data-id')
                           let questionNode = MindmapWrapper.getNodeById(questionNodeID)
-                          console.log('Button clicked: ' + id + '---' + name + '---' + questionNodeID)
-                          console.log('questionNode: ' + questionNode._domElement)
                           if (id && name && questionNode) {
                             that.performPDFBasedQuestion(questionNode, id, name)
                           }
@@ -104,16 +97,10 @@ class MindmapManager {
                         attachments.push({name: name, id: id, button: button})
                       }
                     })
-                    console.log(attachments)
                   }
                 }
               }
-            } else {
-              console.log('removed node', mutation.removedNodes)
             }
-          }
-          if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-            console.log('attributes')
           }
         }
       }
@@ -140,12 +127,6 @@ class MindmapManager {
     }
     this.isChatinMap().then(() => {
       Alerts.showLoadingWindow('Loading...')
-      // the id in the url can be other node but the root, so obtain the root node id
-      /* MindmeisterClient.getBelongingMap(nodeId).then((mapId) => {
-        that._mapId = mapId
-      }, (error) => {
-        Alerts.showErrorToast(error)
-      }) */
       that._mapId = nodeId
       // todo - this is just a workaround for the prototype
       setTimeout(() => {
@@ -340,7 +321,8 @@ class MindmapManager {
     return 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
   }
 
-  getPromptForPDFBasedQuestion (question) {
+  // PROMPTS FOR GPT BASED QUESTION
+  getPromptForGPTNodes (question) {
     let that = this
     let style = that._styles
     let numberOfItems, description
@@ -360,38 +342,24 @@ class MindmapManager {
     const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
-      prompt = that.getPDFBasedProblemPrompt(question, numberOfItems, description)
+      prompt = that.getPromptForGPTProblemNodes(question, numberOfItems, description)
     }
     const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
     if (relevancePromptRE.test(question)) {
-      prompt = that.getPDFBasedRelevancePrompt(question, numberOfItems, description)
+      prompt = that.getPromptForGPTRelevanceNodes(question, numberOfItems, description)
     }
     const solutionPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
     const feasabilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
     const effectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
     if (solutionPromptRE.test(question) || feasabilityPromptRE.test(question) || effectivenessPromptRE.test(question)) {
-      prompt = that.getPDFBasedSolutionPrompt(question, numberOfItems, description)
+      prompt = that.getPromptForGPTSolutionNodes(question, numberOfItems, description)
     }
     return prompt
   }
-
-  getPDFBasedProblemPrompt (question, numberOfItems, description) {
-    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
+  getPromptForGPTProblemNodes (question, numberOfItems, description) {
+    let prompt = question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
     prompt += '{\n' + '"problem": ['
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"problem_name":"name for the problem",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the problem",' +
-          '}'
-      } else {
-        prompt += ',{"problem_name":"name for the problem",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the problem",' +
-          '}'
-      }
-    }
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
         prompt += '{"GPT_problem_name":"name for the problem",' +
@@ -406,24 +374,96 @@ class MindmapManager {
     prompt += ',\n]\n' + '}'
     return prompt
   }
-
-  getPDFBasedRelevancePrompt (question, numberOfItems, description) {
-    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
-    prompt += '{\n' + '"problem": ['
+  getPromptForGPTRelevanceNodes (question, numberOfItems, description) {
+    let prompt = question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
+    prompt += '{\n' + '"relevance": ['
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"problem_name":"name for the problem",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
+        prompt += '{"GPT_relevance_name":"relevance name",' +
+          '"description": "description of the relevance reason",' +
+          '}'
+      } else {
+        prompt += ',{"GPT_relevance_name":"relevance name",' +
+          '"description": "description of the relevance reason",' +
+          '}'
+      }
+    }
+    prompt += '\n]\n' + '}'
+    return prompt
+  }
+  getPromptForGPTSolutionNodes (question, numberOfItems, description) {
+    let prompt = question + '. Think some innovative ideas and please provide ' + numberOfItems + ' items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
+    prompt += '{\n' + '"solutions": ['
+
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_solution_name":"name for the solution",' +
           '"description": "description of the problem",' +
           '}'
       } else {
-        prompt += ',{"problem_name":"name for the problem",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
+        prompt += ',{"GPT_solution_name":"name for the solution",' +
           '"description": "description of the problem",' +
           '}'
       }
     }
+    prompt += ',\n]\n' + '}'
+    return prompt
+  }
+
+  // PROMPTS FOR GPT BASED QUESTION FOR ALTERNATIVE NODES
+  getPromptForGPTAlternativeNodes (question, chatGPTBasedAnswers) {
+    let that = this
+    let style = that._styles
+    let numberOfItems, description
+    let numberOfItemsElement = style.find((s) => { return s.name === 'Number of items' })
+    let descriptionElement = style.find((s) => { return s.name === 'Description' })
+    if (ModelDefaultValues.Description.initial === descriptionElement.value) {
+      description = ModelDefaultValues.Description.default
+    } else {
+      description = descriptionElement.value
+    }
+    if (ModelDefaultValues.NumberOfItems.initial === numberOfItemsElement.value) {
+      numberOfItems = ModelDefaultValues.NumberOfItems.default
+    } else {
+      numberOfItems = numberOfItemsElement.value
+    }
+    let prompt
+    const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
+    const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
+    if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
+      prompt = that.getPromptForGPTAlternativeProblemNodes(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    if (relevancePromptRE.test(question)) {
+      prompt = that.getPromptForGPTAlternativeRelevanceNodes(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    const solutionPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
+    const feasabilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
+    const effectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
+    if (solutionPromptRE.test(question) || feasabilityPromptRE.test(question) || effectivenessPromptRE.test(question)) {
+      prompt = that.getPromptForGPTAlternativeSolutionNodes(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    return prompt
+  }
+  getPromptForGPTAlternativeProblemNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = ''
+    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+          '}'
+      } else {
+        prompt += ',{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+          '}'
+      }
+    }
+    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items for the previous examples with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
+    prompt += '{\n' + '"problem": ['
+
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
         prompt += '{"GPT_problem_name":"name for the problem",' +
@@ -438,8 +478,103 @@ class MindmapManager {
     prompt += ',\n]\n' + '}'
     return prompt
   }
+  getPromptForGPTAlternativeRelevanceNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = ''
+    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+          '}'
+      } else {
+        prompt += ',{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+          '}'
+      }
+    }
+    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
+    prompt += '{\n' + '"relevance": ['
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_relevance_name":"relevance name",' +
+          '"description": "description of the relevance reason",' +
+          '}'
+      } else {
+        prompt += ',{"GPT_relevance_name":"relevance name",' +
+          '"description": "description of the relevance reason",' +
+          '}'
+      }
+    }
+    prompt += '\n]\n' + '}'
+    return prompt
+  }
+  getPromptForGPTAlternativeSolutionNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = ''
+    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+          '}'
+      } else {
+        prompt += ',{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+          '}'
+      }
+    }
+    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
+    prompt += '{\n' + '"solutions": ['
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_solution_name":"name for the solution",' +
+          '"description": "description of the problem",' +
+          '}'
+      } else {
+        prompt += ',{"GPT_solution_name":"name for the solution",' +
+          '"description": "description of the problem",' +
+          '}'
+      }
+    }
+    prompt += ',\n]\n' + '}'
+    return prompt
+  }
 
-  getPDFBasedSolutionPrompt (question, numberOfItems, description) {
+  // PROMPTS FOR PDF BASED QUESTION
+  getPromptForPDFBasedQuestion (question, chatGPTBasedAnswers) {
+    let that = this
+    let style = that._styles
+    let numberOfItems, description
+    let numberOfItemsElement = style.find((s) => { return s.name === 'Number of items' })
+    let descriptionElement = style.find((s) => { return s.name === 'Description' })
+    if (ModelDefaultValues.Description.initial === descriptionElement.value) {
+      description = ModelDefaultValues.Description.default
+    } else {
+      description = descriptionElement.value
+    }
+    if (ModelDefaultValues.NumberOfItems.initial === numberOfItemsElement.value) {
+      numberOfItems = ModelDefaultValues.NumberOfItems.default
+    } else {
+      numberOfItems = numberOfItemsElement.value
+    }
+    let prompt
+    const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
+    const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
+    if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
+      prompt = that.getPDFBasedProblemPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    if (relevancePromptRE.test(question)) {
+      prompt = that.getPDFBasedRelevancePrompt(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    const solutionPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
+    const feasabilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
+    const effectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
+    if (solutionPromptRE.test(question) || feasabilityPromptRE.test(question) || effectivenessPromptRE.test(question)) {
+      prompt = that.getPDFBasedSolutionPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    return prompt
+  }
+  getPDFBasedProblemPrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
     let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
     prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
     prompt += '{\n' + '"problem": ['
@@ -456,15 +591,83 @@ class MindmapManager {
           '}'
       }
     }
+    if (chatGPTBasedAnswers) {
+      for (let i = 0; i < numberOfItems; i++) {
+        if (i === 0) {
+          prompt += '{"GPT_problem_name":"name for the problem",' +
+            '"description": "description of the problem",' +
+            '}'
+        } else {
+          prompt += ',{"GPT_problem_name":"name for the problem",' +
+            '"description": "description of the problem",' +
+            '}'
+        }
+      }
+    }
+    prompt += ',\n]\n' + '}'
+    return prompt
+  }
+  getPDFBasedRelevancePrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
+    prompt += '{\n' + '"relevance": ['
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_problem_name":"name for the problem",' +
+        prompt += '{"relevance_name":"relevance name",' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
+          '"description": "description of the relevance reason",' +
+          '}'
+      } else {
+        prompt += ',{"relevance_name":"relevance name",' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
+          '"description": "description of the relevance reason",' +
+          '}'
+      }
+    }
+    if (chatGPTBasedAnswers) {
+      for (let i = 0; i < numberOfItems; i++) {
+        if (i === 0) {
+          prompt += '{"GPT_relevance_name":"relevance name",' +
+            '"description": "description of the relevance reason",' +
+            '}'
+        } else {
+          prompt += ',{"GPT_relevance_name":"relevance name",' +
+            '"description": "description of the relevance reason",' +
+            '}'
+        }
+      }
+    }
+    prompt += '\n]\n' + '}'
+    return prompt
+  }
+  getPDFBasedSolutionPrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = 'Using the solutions and ideas in the provided pdf, ' + question + '. Think some innovative ideas and please provide ' + numberOfItems + ' items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
+    prompt += '{\n' + '"solutions": ['
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"solution_name":"name for the solution",' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
           '"description": "description of the problem",' +
           '}'
       } else {
-        prompt += ',{"GPT_problem_name":"name for the problem",' +
+        prompt += ',{"solution_name":"name for the solution",' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
           '"description": "description of the problem",' +
           '}'
+      }
+    }
+    if (chatGPTBasedAnswers) {
+      for (let i = 0; i < numberOfItems; i++) {
+        if (i === 0) {
+          prompt += '{"GPT_solution_name":"name for the solution",' +
+            '"description": "description of the problem",' +
+            '}'
+        } else {
+          prompt += ',{"GPT_solution_name":"name for the solution",' +
+            '"description": "description of the problem",' +
+            '}'
+        }
       }
     }
     prompt += ',\n]\n' + '}'
@@ -475,36 +678,57 @@ class MindmapManager {
     Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
     let that = this
     this.parseMap().then(() => {
-      let question = node.text + that.getStyle()
-      ChatGPTClient.performQuestion(question).then((response) => {
-        let concepts = that.parseChatGPTAnswer(response)
-        if (concepts.length === 0) {
-          Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
-          console.log(`ChatGPT's answer:`)
-          console.log(response)
-          return
-        }
-        const labels = concepts.map((c) => { return c.label })
-        let nodes = concepts.map((c) => {
-          return {
-            text: c.label,
-            style: PromptStyles.AnswerItem,
-            image: IconsMap['tick-disabled'],
-            parentId: node.id,
-            note: c.description
-          }
-        })
-        MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
-          Alerts.closeLoadingWindow()
-          if (this._processModes[0].enabled) {
-            let repeatedItems = labels.filter(label => that._problems.includes(label))
-            if (repeatedItems.length === 1) {
-              Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
-            } else if (repeatedItems.length > 1) {
-              Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+      let questionNode = that._mindmapParser.getNodeById(node.id)
+      let gptBasedNodes = questionNode.children.filter((c) => { return c._info.style === 'FFFFFF,100,0,0,2BD9D9,1,' })
+      let prompt
+      if (gptBasedNodes.length > 0) {
+        prompt = that.getPromptForGPTAlternativeNodes(node.text, gptBasedNodes)
+      } else {
+        prompt = that.getPromptForGPTNodes(node.text)
+      }
+      console.log('prompt:\n ' + prompt)
+      ChatGPTClient.getApiKey().then((key) => {
+        if (key !== null && key !== '') {
+          let callback = (json) => {
+            Alerts.closeLoadingWindow()
+            const gptItemsNodes = that.parseChatGPTAnswer(json)
+            if (gptItemsNodes === null || gptItemsNodes.length === 0) {
+              Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
             }
+            let labels, nodes
+            // GPT Answers
+            const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
+            let gptProblemsNodes = gptItemsNodes.map((c) => {
+              return {
+                text: c.label,
+                style: PromptStyles.AnswerItem,
+                image: IconsMap['tick-disabled'],
+                parentId: node.id,
+                note: c.description
+              }
+            })
+            labels = gptProblemsLabels
+            nodes = gptProblemsNodes
+            MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
+              Alerts.closeLoadingWindow()
+              if (this._processModes[0].enabled) {
+                let repeatedItems = labels.filter(label => that._problems.includes(label))
+                if (repeatedItems.length === 1) {
+                  Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
+                } else if (repeatedItems.length > 1) {
+                  Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+                }
+              }
+            })
           }
-        })
+          OpenAIManager.gptQuestion({
+            apiKey: key,
+            prompt: prompt,
+            callback: callback
+          })
+        } else {
+          Alerts.showErrorToast('No API key found for ChatGPT')
+        }
       }).catch((error) => {
         if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
         else Alerts.showErrorToast(`ChatGPT error: ${error}`)
@@ -515,13 +739,14 @@ class MindmapManager {
   performPDFBasedQuestion (node, id, name) {
     Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
     let that = this
+    let chatGPTBasedAnswers = false
     this.parseMap().then(() => {
-      let prompt = that.getPromptForPDFBasedQuestion(node.text)
+      let prompt = that.getPromptForPDFBasedQuestion(node.text, chatGPTBasedAnswers)
       console.log('prompt: ' + prompt)
       // Ensure workerSrc is set before loading the document
+      // eslint-disable-next-line no-undef
       PDFJS.workerSrc = chrome.runtime.getURL('resources/pdfjs/build/pdf.worker.js')
       MindmeisterClient.getToken().then(token => {
-        console.log(token)
         var myHeaders = new Headers()
         myHeaders.append('accept', 'application/pdf') // Changed to 'application/pdf'
         var requestOptions = {
@@ -529,7 +754,6 @@ class MindmapManager {
           headers: myHeaders,
           redirect: 'follow'
         }
-
         fetch('https://www.mindmeister.com/api/v2/files/' + id + '/attachment?access_token=' + token, requestOptions)
           .then(response => {
             if (!response.ok) {
@@ -539,35 +763,21 @@ class MindmapManager {
             }
           })
           .then(pdfData => {
+            // eslint-disable-next-line no-undef
             PDFJS.getDocument({ data: pdfData }).promise.then(async pdfDocument => {
               let documents = []
               documents = await LLMTextUtils.loadDocument(pdfDocument)
               ChatGPTClient.getApiKey().then((key) => {
                 if (key !== null && key !== '') {
                   let callback = (json) => {
-                    console.log(json)
                     Alerts.closeLoadingWindow()
-                    const { gptItemsNodes, pdfBasedItemsNodes } = that.parseChatGPTAnswerFromJSON(json)
-                    console.log('gptProblems: ' + gptItemsNodes)
-                    console.log('otherProblems: ' + pdfBasedItemsNodes)
-                    if (gptItemsNodes.length === 0 && pdfBasedItemsNodes.length === 0) {
+                    const { gptItemsNodes, pdfBasedItemsNodes } = that.parseChatGPTAnswerFromJSON(json, chatGPTBasedAnswers)
+                    if ((gptItemsNodes === null || gptItemsNodes.length === 0) && pdfBasedItemsNodes.length === 0) {
                       Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
-                      console.log(`ChatGPT's answer:`)
-                      console.log(json)
                     }
-                    // GPT Answers
-                    const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
+                    let labels, nodes
+                    // PDF Answers
                     const otherProblemsLabels = pdfBasedItemsNodes.map((c) => { return c.label })
-                    const labels = gptProblemsLabels.concat(otherProblemsLabels)
-                    let gptProblemsNodes = gptItemsNodes.map((c) => {
-                      return {
-                        text: c.label,
-                        style: PromptStyles.AnswerItem,
-                        image: IconsMap['tick-disabled'],
-                        parentId: node.id,
-                        note: c.description
-                      }
-                    })
                     let otherProblemsNodes = pdfBasedItemsNodes.map((c) => {
                       return {
                         text: c.label,
@@ -577,7 +787,24 @@ class MindmapManager {
                         note: c.description + '\n\n EXCERPT FROM ' + name + ':\n' + c.excerpt
                       }
                     })
-                    const nodes = gptProblemsNodes.concat(otherProblemsNodes)
+                    if (chatGPTBasedAnswers) {
+                      // GPT Answers
+                      const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
+                      let gptProblemsNodes = gptItemsNodes.map((c) => {
+                        return {
+                          text: c.label,
+                          style: PromptStyles.AnswerItem,
+                          image: IconsMap['tick-disabled'],
+                          parentId: node.id,
+                          note: c.description
+                        }
+                      })
+                      labels = otherProblemsLabels.concat(gptProblemsLabels)
+                      nodes = otherProblemsNodes.concat(gptProblemsNodes)
+                    } else {
+                      labels = otherProblemsLabels
+                      nodes = otherProblemsNodes
+                    }
                     MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
                       Alerts.closeLoadingWindow()
                       if (this._processModes[0].enabled) {
@@ -618,44 +845,42 @@ class MindmapManager {
       Alerts.showErrorToast('Error parsing map: ' + error.message)
     })
   }
-
-  parseChatGPTAnswer (answer) {
-    let nodes = []
-    let pattern = /\d(\)|\.)[^:\-\.\n$]+(:|\-|\.|\n|$)/g
-    let result = answer.match(pattern)
-    if (result == null || result.length === 0) return []
-    let resultNew = result.map((r) =>
-      r.replace(/\(/g, '\\(')
-        .replace(/\)/g, '\\)')
-        .replace(/\./g, '\\.')
-        .replace(/\*/g, '\\*')
-        // eslint-disable-next-line no-useless-escape
-        .replace(/\-/g, '\\-')
-    )
-    let regexp = new RegExp('(' + resultNew.join('|') + ')', 'gi')
-    let parts = answer.split(regexp)
-    result.forEach((r, ind) => {
-      let whole = r.replace(/\d(\)|\.)/, '').replace(':', '').replace('-', '').replaceAll('*', '')
-      nodes.push({label: whole.trim(), description: parts[ind * 2 + 2].trim()})
-    })
-    return nodes
-  }
-  /**
-   * Parse answers
-   */
-  parseChatGPTAnswerFromJSON (json) {
-    const gptItems = Array.from(Object.values(json)[0]).filter(item =>
+  parseChatGPTAnswer (json) {
+    let gptItems
+    gptItems = Array.from(Object.values(json)[0]).filter(item =>
       Object.keys(item).some(key => key.startsWith('GPT_'))
     )
-    const pdfBasedItems = Array.from(Object.values(json)[0]).filter(item =>
-      !Object.keys(item).some(key => key.startsWith('GPT_'))
-    )
-    const gptItemsNodes = []
-    const pdfBasedItemsNodes = []
+    let gptItemsNodes = []
     gptItems.forEach((item) => {
       let name = Utils.findValuesEndingWithName(item, 'name')
       gptItemsNodes.push({ label: name, description: item.description })
     })
+    return gptItemsNodes
+  }
+
+  /**
+   * Parse answers
+   */
+  parseChatGPTAnswerFromJSON (json, chatGPTBasedAnswers) {
+    let gptItems
+    if (chatGPTBasedAnswers) {
+      gptItems = Array.from(Object.values(json)[0]).filter(item =>
+        Object.keys(item).some(key => key.startsWith('GPT_'))
+      )
+    }
+    const pdfBasedItems = Array.from(Object.values(json)[0]).filter(item =>
+      !Object.keys(item).some(key => key.startsWith('GPT_'))
+    )
+    let gptItemsNodes = []
+    let pdfBasedItemsNodes = []
+    if (chatGPTBasedAnswers) {
+      gptItems.forEach((item) => {
+        let name = Utils.findValuesEndingWithName(item, 'name')
+        gptItemsNodes.push({ label: name, description: item.description })
+      })
+    } else {
+      gptItemsNodes = null
+    }
     pdfBasedItems.forEach((item) => {
       let name = Utils.findValuesEndingWithName(item, 'name')
       pdfBasedItemsNodes.push({label: name, excerpt: item.excerpt, description: item.excerpt})
@@ -884,7 +1109,6 @@ class MindmapManager {
     // let problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     let problems = []
     scopingAnalysisNodeChildren.forEach((c) => {
-      console.log(c.text)
       const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
       if (problemPromptRE.test(c.text)) {
         c.children.forEach((p) => {
@@ -896,8 +1120,6 @@ class MindmapManager {
       }
     })
     this._scopingAnalysis = problems
-    console.log('Scoping analysis: ' + this._scopingAnalysis)
-    console.log('Problems: ' + that._problems)
   }
   parseProblem (problem) {
     let that = this

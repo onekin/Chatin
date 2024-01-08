@@ -12,6 +12,7 @@ const { ChatAnthropic } = require('langchain/chat_models/anthropic')
 const { TokenTextSplitter } = require('langchain/text_splitter')
 const { OpenAIEmbeddings } = require('langchain/embeddings/openai')
 const { MemoryVectorStore } = require('langchain/vectorstores/memory')
+const { PromptTemplate } = require('@langchain/core/prompts')
 
 class LLMManager {
   init () {
@@ -29,17 +30,24 @@ class LLMManager {
           )
           return true // Return true inside the message handler
         } else if (request.cmd === 'openAI') {
-          this.askLLMOpenAI(request).then(
-            res => sendResponse({ res: res }),
-            err => sendResponse({ err: err })
-          )// Return the error inside the message handler
+          if (request.data.documents) {
+            this.askLLMOpenAIWithDocuments(request).then(
+              res => sendResponse({ res: res }),
+              err => sendResponse({ err: err })
+            )// Return the error inside the message handler
+          } else {
+            this.askLLMOpenAI(request).then(
+              res => sendResponse({ res: res }),
+              err => sendResponse({ err: err })
+            )// Return the error inside the message handler
+          }
           return true // Return true inside the message handler
         }
       }
     })
   }
 
-  async askLLMOpenAI (request) {
+  async askLLMOpenAIWithDocuments (request) {
     const apiKey = request.data.apiKey
     const query = request.data.query
     const documents = request.data.documents
@@ -145,6 +153,59 @@ class LLMManager {
           return { error: 'All documents removed, no results found.' }
         }
         return callback(documents)
+      } else if (err.toString().startsWith('Error: 401')) {
+        return { error: 'Incorrect API key provided.' }
+      } else {
+        return { error: 'An error has occurred trying first call.' }
+      }
+    })
+  }
+
+  async askLLMOpenAI (request) {
+    const apiKey = request.data.apiKey
+    const query = request.data.query
+    // create model
+    let totalCompletionTokens = 0
+    let totalPromptTokens = 0
+    let totalExecutionTokens = 0
+
+    const model = new ChatOpenAI({
+      temperature: 0,
+      callbacks: [
+        {
+          handleLLMEnd: (output, runId, parentRunId, tags) => {
+            const { completionTokens, promptTokens, totalTokens } = output.llmOutput?.tokenUsage || { completionTokens: 0, promptTokens: 0, totalTokens: 0 }
+
+            totalCompletionTokens += completionTokens
+            totalPromptTokens += promptTokens
+            totalExecutionTokens += totalTokens
+
+            console.log(`Total completion tokens: ${totalCompletionTokens}`)
+            console.log(`Total prompt tokens: ${totalPromptTokens}`)
+            console.log(`Total execution tokens: ${totalExecutionTokens}`)
+          }
+        }
+      ],
+      modelName: 'gpt-4-1106-preview',
+      openAIApiKey: apiKey,
+      modelKwargs: {
+        'response_format': {
+          type: 'json_object'
+        }
+      }
+    })
+
+    const promptTemplate = PromptTemplate.fromTemplate(
+      '{query}'
+    )
+    // Create QA chain
+    const chain = promptTemplate.pipe(model)
+    return chain.invoke({ query: query }).then(res => {
+      return res.text // Return the result so it can be used in the next .then()
+    }).catch(async err => {
+      console.log(err.toString())
+      if (err.toString().startsWith('Error: 429')) {
+        return { error: 'Incorrect API key provided.' + err.toString() }
       } else if (err.toString().startsWith('Error: 401')) {
         return { error: 'Incorrect API key provided.' }
       } else {
