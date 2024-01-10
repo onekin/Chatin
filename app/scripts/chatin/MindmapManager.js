@@ -451,87 +451,214 @@ class MindmapManager {
     let prompt = ''
     for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
       if (i === 0) {
-        prompt += '{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+        prompt += '{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
           '}'
       } else {
-        prompt += ',{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
-          '}'
+        prompt += ',{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}\n'
       }
     }
-    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items for the previous examples with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
-    prompt += '{\n' + '"problem": ['
+    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items for the previous examples with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
+    prompt += '{\n' + '"problem": [\n'
 
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_problem_name":"name for the problem",' +
-          '"description": "description of the problem",' +
+        prompt += '{"GPT_problem_name":"name for the problem",\n' +
+          '"description": "description of the problem",\n' +
           '}'
       } else {
-        prompt += ',{"GPT_problem_name":"name for the problem",' +
-          '"description": "description of the problem",' +
-          '}'
+        prompt += ',{"GPT_problem_name":"name for the problem",\n' +
+          '"description": "description of the problem",\n' +
+          '}\n'
       }
     }
-    prompt += ',\n]\n' + '}'
+    prompt += ',\n]\n' + '}\n'
     return prompt
   }
   getPromptForGPTAlternativeRelevanceNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
     let prompt = ''
     for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
       if (i === 0) {
-        prompt += '{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
-          '}'
+        prompt += '{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}\n'
       } else {
-        prompt += ',{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
-          '}'
+        prompt += ',{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}\n'
       }
     }
-    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
-    prompt += '{\n' + '"relevance": ['
+    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
+    prompt += '{\n' + '"relevance": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_relevance_name":"relevance name",' +
-          '"description": "description of the relevance reason",' +
-          '}'
+        prompt += '{"GPT_relevance_name":"relevance name",\n' +
+          '"description": "description of the relevance reason",\n' +
+          '}\n'
       } else {
-        prompt += ',{"GPT_relevance_name":"relevance name",' +
-          '"description": "description of the relevance reason",' +
-          '}'
+        prompt += ',{"GPT_relevance_name":"relevance name",\n' +
+          '"description": "description of the relevance reason",\n' +
+          '}\n'
       }
     }
-    prompt += '\n]\n' + '}'
+    prompt += '\n]\n' + '}\n'
     return prompt
   }
   getPromptForGPTAlternativeSolutionNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
     let prompt = ''
     for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
       if (i === 0) {
-        prompt += '{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+        prompt += '{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}\n'
+      } else {
+        prompt += ',{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}\n'
+      }
+    }
+    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
+    prompt += '{\n' + '"solutions": [\n'
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_solution_name":"name for the solution",\n' +
+          '"description": "description of the problem",\n' +
           '}'
       } else {
-        prompt += ',{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',' +
+        prompt += ',{"GPT_solution_name":"name for the solution",\n' +
+          '"description": "description of the problem",\n' +
+          '}\n'
+      }
+    }
+    prompt += ',\n]\n' + '}\n'
+    return prompt
+  }
+
+  // PROMPTS FOR GPT BASED QUESTION FOR ALTERNATIVE NODES
+  getPromptForGPTExampleNodes (question, chatGPTBasedAnswers) {
+    let that = this
+    let style = that._styles
+    let numberOfItems, description
+    let numberOfItemsElement = style.find((s) => { return s.name === 'Number of items' })
+    let descriptionElement = style.find((s) => { return s.name === 'Description' })
+    if (ModelDefaultValues.Description.initial === descriptionElement.value) {
+      description = ModelDefaultValues.Description.default
+    } else {
+      description = descriptionElement.value
+    }
+    if (ModelDefaultValues.NumberOfItems.initial === numberOfItemsElement.value) {
+      numberOfItems = ModelDefaultValues.NumberOfItems.default
+    } else {
+      numberOfItems = numberOfItemsElement.value
+    }
+    let prompt
+    const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
+    const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
+    if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
+      prompt = that.getPromptForGPTExampleProblemNodes(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    if (relevancePromptRE.test(question)) {
+      prompt = that.getPromptForGPTExampleRelevanceNodes(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    const solutionPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
+    const feasabilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
+    const effectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
+    if (solutionPromptRE.test(question) || feasabilityPromptRE.test(question) || effectivenessPromptRE.test(question)) {
+      prompt = that.getPromptForGPTExampleSolutionNodes(question, numberOfItems, description, chatGPTBasedAnswers)
+    }
+    return prompt
+  }
+  getPromptForGPTExampleProblemNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = ''
+    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}'
+      } else {
+        prompt += ',{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
           '}'
       }
     }
-    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
-    prompt += '{\n' + '"solutions": ['
+    prompt += '\n' + question + 'Based on the above examples, please provide ' + numberOfItems + ' problem items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:' + '\n'
+    prompt += '{\n' + '"problem": [' + '\n'
+
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_solution_name":"name for the solution",' +
-          '"description": "description of the problem",' +
+        prompt += '{"GPT_problem_name":"name for the problem",' + '\n' +
+          '"description": "description of the problem",' + '\n' +
           '}'
       } else {
-        prompt += ',{"GPT_solution_name":"name for the solution",' +
-          '"description": "description of the problem",' +
+        prompt += ',{"GPT_problem_name":"name for the problem",' + '\n' +
+          '"description": "description of the problem",' + '\n' +
+          '}'
+      }
+    }
+    prompt += ',\n]\n' + '}'
+    return prompt
+  }
+  getPromptForGPTExampleRelevanceNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = ''
+    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}'
+      } else {
+        prompt += ',{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}'
+      }
+    }
+    prompt += '\n' + question + 'Based on the above examples, please provide ' + numberOfItems + ' relevance items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:' + '\n'
+    prompt += '{\n' + '"relevance": [' + '\n'
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_relevance_name":"relevance name",\n' +
+          '"description": "description of the relevance reason",\n' +
+          '}'
+      } else {
+        prompt += ',{"GPT_relevance_name":"relevance name",\n' +
+          '"description": "description of the relevance reason",\n' +
+          '}'
+      }
+    }
+    prompt += '\n]\n' + '}'
+    return prompt
+  }
+  getPromptForGPTExampleSolutionNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = ''
+    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}'
+      } else {
+        prompt += ',{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}' + '\n'
+      }
+    }
+    prompt += '\n' + question + 'Based on the above examples, please provide ' + numberOfItems + ' solution items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
+    prompt += '{\n' + '"solutions": [\n'
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_solution_name":"name for the solution",\n' +
+          '"description": "description of the problem",\n' +
+          '}'
+      } else {
+        prompt += ',{"GPT_solution_name":"name for the solution",\n' +
+          '"description": "description of the problem",\n' +
           '}'
       }
     }
@@ -575,98 +702,98 @@ class MindmapManager {
     return prompt
   }
   getPDFBasedProblemPrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
-    prompt += '{\n' + '"problem": ['
+    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description + ',\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:\n'
+    prompt += '{\n' + '"problem": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"problem_name":"name for the problem",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the problem",' +
+        prompt += '{"problem_name":"name for the problem",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
+          '"description": "description of the problem",\n' +
           '}'
       } else {
-        prompt += ',{"problem_name":"name for the problem",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the problem",' +
-          '}'
+        prompt += ',{"problem_name":"name for the problem",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
+          '"description": "description of the problem",\n' +
+          '}\n'
       }
     }
     if (chatGPTBasedAnswers) {
       for (let i = 0; i < numberOfItems; i++) {
         if (i === 0) {
-          prompt += '{"GPT_problem_name":"name for the problem",' +
-            '"description": "description of the problem",' +
+          prompt += '{"GPT_problem_name":"name for the problem",\n' +
+            '"description": "description of the problem",\n' +
             '}'
         } else {
-          prompt += ',{"GPT_problem_name":"name for the problem",' +
-            '"description": "description of the problem",' +
-            '}'
+          prompt += ',{"GPT_problem_name":"name for the problem",\n' +
+            '"description": "description of the problem",\n' +
+            '}\n'
         }
       }
     }
-    prompt += ',\n]\n' + '}'
+    prompt += ',\n]\n' + '}\n'
     return prompt
   }
   getPDFBasedRelevancePrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
-    prompt += '{\n' + '"relevance": ['
+    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:\n'
+    prompt += '{\n' + '"relevance": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"relevance_name":"relevance name",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the relevance reason",' +
+        prompt += '{"relevance_name":"relevance name",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
+          '"description": "description of the relevance reason",\n' +
           '}'
       } else {
-        prompt += ',{"relevance_name":"relevance name",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the relevance reason",' +
+        prompt += ',{"relevance_name":"relevance name",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
+          '"description": "description of the relevance reason",\n' +
           '}'
       }
     }
     if (chatGPTBasedAnswers) {
       for (let i = 0; i < numberOfItems; i++) {
         if (i === 0) {
-          prompt += '{"GPT_relevance_name":"relevance name",' +
-            '"description": "description of the relevance reason",' +
-            '}'
+          prompt += '{"GPT_relevance_name":"relevance name",\n' +
+            '"description": "description of the relevance reason",\n' +
+            '}\n'
         } else {
-          prompt += ',{"GPT_relevance_name":"relevance name",' +
-            '"description": "description of the relevance reason",' +
-            '}'
+          prompt += ',{"GPT_relevance_name":"relevance name",\n' +
+            '"description": "description of the relevance reason",\n' +
+            '}\n'
         }
       }
     }
-    prompt += '\n]\n' + '}'
+    prompt += '\n]\n' + '}\n'
     return prompt
   }
   getPDFBasedSolutionPrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = 'Using the solutions and ideas in the provided pdf, ' + question + '. Think some innovative ideas and please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:'
-    prompt += '{\n' + '"solutions": ['
+    let prompt = 'Using the solutions and ideas in the provided pdf, ' + question + '. Think some innovative ideas and please provide ' + numberOfItems + ' items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:\n'
+    prompt += '{\n' + '"solutions": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"solution_name":"name for the solution",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the problem",' +
-          '}'
+        prompt += '{"solution_name":"name for the solution",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
+          '"description": "description of the problem",\n' +
+          '}\n'
       } else {
-        prompt += ',{"solution_name":"name for the solution",' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",' +
-          '"description": "description of the problem",' +
-          '}'
+        prompt += ',{"solution_name":"name for the solution",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
+          '"description": "description of the problem",\n' +
+          '}\n'
       }
     }
     if (chatGPTBasedAnswers) {
       for (let i = 0; i < numberOfItems; i++) {
         if (i === 0) {
-          prompt += '{"GPT_solution_name":"name for the solution",' +
-            '"description": "description of the problem",' +
+          prompt += '{"GPT_solution_name":"name for the solution",\n' +
+            '"description": "description of the problem",\n' +
             '}'
         } else {
-          prompt += ',{"GPT_solution_name":"name for the solution",' +
-            '"description": "description of the problem",' +
-            '}'
+          prompt += ',{"GPT_solution_name":"name for the solution",\n' +
+            '"description": "description of the problem",\n' +
+            '}\n'
         }
       }
     }
