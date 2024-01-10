@@ -56,6 +56,10 @@ class MindmeisterClient {
     return this.processInBackground('addNodes', {mapId: mapId, newNodes: newNodes})
   }
 
+  static removeNodes (mapId, removeNodes) {
+    return this.processInBackground('removeNodes', {mapId: mapId, removeNodes: removeNodes})
+  }
+
   static modifyNodes (mapId, nodes) {
     return this.processInBackground('modifyNodes', {mapId: mapId, nodes: nodes})
   }

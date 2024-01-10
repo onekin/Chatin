@@ -1,16 +1,20 @@
 
-const Swal = require('sweetalert2')
+let swal = null
+if (document && document.head) {
+  swal = require('sweetalert2')
+}
+const _ = require('lodash')
 
 class Alerts {
   static showErrorWindow (message) {
-    Swal.fire({
+    swal.fire({
       icon: 'error',
       html: message
     })
   }
 
   static showErrorToast (message, destroyFunc) {
-    Swal.fire({
+    swal.fire({
       icon: 'error',
       text: message,
       toast: true,
@@ -21,14 +25,14 @@ class Alerts {
   }
 
   static showWarningWindow (message) {
-    Swal.fire({
+    swal.fire({
       icon: 'warning',
       html: message
     })
   }
 
   static showToast (content) {
-    Swal.fire({
+    swal.fire({
       icon: 'warning',
       toast: true,
       html: content,
@@ -39,7 +43,7 @@ class Alerts {
   }
 
   static showLoadingWindow (content) {
-    Swal.fire({
+    swal.fire({
       title: 'Loading',
       html: content,
       toast: true,
@@ -47,14 +51,72 @@ class Alerts {
       showConfirmButton: false,
       showCancelButton: false,
       onBeforeOpen: () => {
-        Swal.showLoading()
+        swal.showLoading()
       }
     })
   }
 
   static closeLoadingWindow () {
-    Swal.hideLoading()
-    Swal.close()
+    swal.hideLoading()
+    swal.close()
+  }
+
+  static multipleInputAlert ({title = 'Input', html = '', preConfirm, showCancelButton = true, callback}) {
+    Alerts.tryToLoadSwal()
+    if (_.isNull(swal)) {
+      if (_.isFunction(callback)) {
+        callback(new Error('Unable to load swal'))
+      }
+    } else {
+      swal.fire({
+        title: title,
+        html: html,
+        focusConfirm: false,
+        preConfirm: preConfirm,
+        showCancelButton: showCancelButton
+      }).then(() => {
+        if (_.isFunction(callback)) {
+          callback(null)
+        }
+      })
+    }
+  }
+
+  static askUserNumberOfClusters (number, callback) {
+    let showForm = () => {
+      // Create form
+      let numberInput = Math.floor(number / 2)
+      let html = ''
+      html += '<label for="numberInput">Enter a number (less than ' + number + '): </label>'
+      html += '<input type="number" id="numberInput" name="numberInput" value="5" min="1" max="' + (number - 1) + '" ><br>'
+      Alerts.multipleInputAlert({
+        title: 'How many nodes do you want to cluster?',
+        html: html,
+        // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
+        preConfirm: () => {
+          numberInput = document.querySelector('#numberInput').value
+        },
+        showCancelButton: true,
+        callback: (err) => {
+          if (err) {
+            callback(new Error('Unable to read json file: ' + err.message))
+          } else {
+            callback(null, numberInput)
+          }
+        }
+      })
+    }
+    showForm()
+  }
+
+  static tryToLoadSwal () {
+    if (_.isNull(swal)) {
+      try {
+        swal = require('sweetalert2')
+      } catch (e) {
+        swal = null
+      }
+    }
   }
 }
 

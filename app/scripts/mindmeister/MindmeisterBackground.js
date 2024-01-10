@@ -50,6 +50,8 @@ class MindmeisterBackground {
             //   that.addNode(message.args.mapId, message.args.parentId, message.args.newNode).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'addNodes') {
             that.addNodes(message.args.mapId, message.args.newNodes).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
+          } else if (message.method === 'removeNodes') {
+            that.removeNodes(message.args.mapId, message.args.removeNodes).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'modifyNodes') {
             that.modifyNodes(message.args.mapId, message.args.nodes).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'doActions') {
@@ -349,6 +351,18 @@ class MindmeisterBackground {
     }
   }
 
+  addNodeToChangeListToRemove (changeList, mapId, node) {
+    let nodeId = node.id
+    let changeId = this.getCurrentChangeId()
+    let removeAction = {
+      'client_id': changeId,
+      'idea_id': nodeId,
+      'entity': 'Idea',
+      'operation': 'Remove'
+    }
+    changeList.addChange(removeAction)
+  }
+
   addNodeToChangeListAPI (changeList, mapId, node) {
     let nodeId = this.getCurrentNodeId()
     let changeId = this.getCurrentChangeId()
@@ -537,6 +551,19 @@ class MindmeisterBackground {
         that.doChanges(mapId, changeList.changes).then(() => {
           resolve('ok')
         })
+      })
+    })
+  }
+
+  removeNodes (mapId, nodes) {
+    let that = this
+    return new Promise((resolve, reject) => {
+      let changeList = new ChangeList()
+      nodes.forEach((n) => {
+        this.addNodeToChangeListToRemove(changeList, mapId, n)
+      })
+      that.doChanges(mapId, changeList.changes).then(() => {
+        resolve('ok')
       })
     })
   }
