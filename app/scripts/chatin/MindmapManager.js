@@ -281,23 +281,25 @@ class MindmapManager {
       if (div.textContent.includes('Task') && div.getAttribute('style') === expectedStyle) {
         let questionNode = that.getCurrentNode()
         if (that.isQuestionNode(questionNode)) {
-          console.log('click on Narrative')
-          // This div contains the text "Task"
-          console.log(div)
-          // Create a duplicate of the div
-          let narrativeButton = div.cloneNode(true)
-          // Optionally, you can change the content or attributes of the duplicate
-          narrativeButton.textContent = 'Narrative' // Changing the text content to 'Aggregate'
-          narrativeButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
-          // Insert the duplicate after the original div
-          div.parentNode.insertBefore(narrativeButton, div.nextSibling)
-          narrativeButton.addEventListener('click', function (event) {
-            console.log('click on Narrative')
-            that.parseMap().then(() => {
-              questionNode = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
-              that.performNarrativeQuestion(questionNode)
+          let question = questionNode.innerText.replaceAll('\n', ' ')
+          let purpose = that.getQuestionPurpose(question)
+          if (purpose !== null && purpose !== 'problemStatement') {
+            // Create a duplicate of the div
+            let narrativeButton = div.cloneNode(true)
+            // Optionally, you can change the content or attributes of the duplicate
+            narrativeButton.textContent = 'Narrative' // Changing the text content to 'Aggregate'
+            narrativeButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
+            // Insert the duplicate after the original div
+            div.parentNode.insertBefore(narrativeButton, div.nextSibling)
+            narrativeButton.addEventListener('click', function (event) {
+              console.log('click on Narrative')
+              that.parseMap().then(() => {
+                let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+                let narrative = that.getNarrative(that, questionNodeObject)
+                that.performNarrativeQuestion(questionNode, narrative)
+              })
             })
-          })
+          }
           if (that.canBeAggregated()) {
             // Create a duplicate of the div
             let aggregateButton = div.cloneNode(true)
@@ -305,12 +307,12 @@ class MindmapManager {
             aggregateButton.textContent = 'Aggregate' // Changing the text content to 'Aggregate'
             aggregateButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
             // Insert the duplicate after the original div
-            div.parentNode.insertBefore(aggregateButton, narrativeButton.nextSibling)
+            div.parentNode.insertBefore(aggregateButton, aggregateButton.nextSibling)
             aggregateButton.addEventListener('click', function (event) {
               console.log('click on Aggregate')
               that.parseMap().then(() => {
-                questionNode = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
-                that.performAggregationQuestion(questionNode)
+                let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+                that.performAggregationQuestion(questionNodeObject)
               })
             })
           }
@@ -753,7 +755,59 @@ class MindmapManager {
     prompt += ',\n]\n' + '}\n'
     return prompt
   }
-
+  getPromptForNarrative (question, narrative, variables) {
+    // let that = this
+    let practice = variables.find((v) => { return v.name === 'Practice' }).value
+    let activity = variables.find((v) => { return v.name === 'Activity' }).value
+    let prompt = 'I want you to behave as an academic. Next I will provide you with a RESEARCH QUESTION and a set of text chunks that provide the CONTEXT where the Research Question aroses. I want you to provide a coherent narrative that ends up in the question Research Question\n'
+    prompt += 'RESEARCH QUESTION=[ ' + narrative.question + ']\n'
+    if (narrative.problem) {
+      let problems = narrative.problem.split(';')
+      problems.pop()
+      let currentProblem = problems.pop().split(':')
+      prompt += 'CONTEXT=[ One of the problems that arise during' + activity + ' in ' + practice + 'is ' + currentProblem[0] + ', which means that ' + currentProblem[1] + '.\n'
+      while (problems.length > 0) {
+        let followingProblem = problems.pop().split(':')
+        prompt += currentProblem[0] + ' occurs because ' + followingProblem[0] + ', which means that ' + followingProblem[1] + '\n'
+        currentProblem = followingProblem
+      }
+    }
+    if (narrative.relevance) {
+      let relevances = narrative.relevance.split(';')
+      relevances.pop()
+      let currentRelevance = relevances.pop().split(':')
+      prompt += 'This problem is relevant because consequences can be ' + currentRelevance[0] + ' which means that ' + currentRelevance[1] + '.\n'
+      while (relevances.length > 0) {
+        currentRelevance = relevances.pop().split(':')
+        prompt += 'It is also relevant because ' + currentRelevance[0] + ', which means that ' + currentRelevance[1] + '\n'
+      }
+    }
+    if (narrative.solution) {
+      let solution = narrative.solution.split(':')
+      prompt += 'This problem can be addressed by' + solution[0] + ' which means that ' + solution[1] + '.\n'
+    }
+    if (narrative.feasability) {
+      let feasabilities = narrative.feasability.split(';')
+      feasabilities.pop()
+      let currentFeasability = feasabilities.pop().split(':')
+      prompt += 'This solution can be implemented by ' + currentFeasability[0] + ' which means that ' + currentFeasability[1] + '.\n'
+      while (feasabilities.length > 0) {
+        currentFeasability = feasabilities.pop().split(':')
+        prompt += 'It can also be implemented by ' + currentFeasability[0] + ', which means that ' + currentFeasability[1] + '\n'
+      }
+    }
+    if (narrative.effectiveness) {
+      let effectivenesses = narrative.effectiveness.split(';')
+      effectivenesses.pop()
+      let currentEffectiveness = effectivenesses.pop().split(':')
+      prompt += 'This solution can help to ' + currentEffectiveness[0] + ' because ' + currentEffectiveness[1] + '.\n'
+      while (effectivenesses.length > 0) {
+        currentEffectiveness = effectivenesses.pop().split(':')
+        prompt += 'This can also help to ' + currentEffectiveness[0] + ', because ' + currentEffectiveness[1] + '\n'
+      }
+    }
+    return prompt
+  }
   /**
    * Perform questions
    */
@@ -927,8 +981,12 @@ class MindmapManager {
       Alerts.showErrorToast('Error parsing map: ' + error.message)
     })
   }
-  performNarrativeQuestion (node) {
-    console.log('performNarrativeQuestion')
+  performNarrativeQuestion (node, narrative) {
+    let that = this
+    let variables = that._variables
+    console.log('narrative', narrative)
+    let prompt = that.getPromptForNarrative(node, narrative, variables)
+    console.log(prompt)
   }
   performAggregationQuestion (node) {
     let that = this
@@ -1497,11 +1555,84 @@ class MindmapManager {
   canBeAggregated () {
     return true
   }
-  findIssue (text, nodeId) {
-    let id = nodeId > 0 ? nodeId : null
-    for (let i = 0; i < this._scopingAnalysis.length; i++) {
-      let issue = this._scopingAnalysis[i].findIssue(text, id)
-      if (issue != null) return issue
+  hasQuestionType (node, questionType) {
+    let foundNode = node.children.find((e) => { return e._info.title.replaceAll('\n', ' ').includes(questionType) })
+    if (foundNode) {
+      if (foundNode.children.length > 0) {
+        return true
+      } else {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
+  isQuestionType (node, questionType) {
+    if (node._info.title.replaceAll('\n', ' ').includes(questionType)) {
+      return true
+    } else {
+      return false
+    }
+  }
+  getQuestionTypeAnswers (node, questionType) {
+    let text = ''
+    let textNode = node.children.find((e) => { return e._info.title.replaceAll('\n', ' ').includes(questionType) })
+    textNode.children.forEach((e) => {
+      text += e._info.title.replaceAll('\n', ' ') + ':' + e._info.note.replaceAll('\n', ' ') + ';'
+    })
+    return text
+  }
+  getNarrative (that, questionNode) {
+    let question = questionNode._info.title.replaceAll('\n', ' ')
+    let narrative = {question: question, problem: '', relevance: '', solution: '', feasability: '', effectiveness: ''}
+    let RQPurpose = that.getQuestionPurpose(question)
+    let firstChild = that._mindmapParser.getNodeById(questionNode._info.parent)
+    while (firstChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
+      if (that.hasQuestionType(firstChild, 'WHY IS') && RQPurpose !== 'relevance') {
+        narrative.relevance = that.getQuestionTypeAnswers(firstChild, 'WHY IS')
+      }
+      if (that.hasQuestionType(firstChild, 'BE IMPLEMENTED TO') && RQPurpose !== 'feasability') {
+        narrative.feasability = that.getQuestionTypeAnswers(firstChild, 'BE IMPLEMENTED TO')
+      }
+      if (that.hasQuestionType(firstChild, 'HELP TO') && RQPurpose !== 'effectiveness') {
+        narrative.effectiveness = that.getQuestionTypeAnswers(firstChild, 'HELP TO')
+      }
+      let secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
+      if (that.isQuestionType(secondChild, 'WHICH PROBLEMS')) {
+        narrative.problem += firstChild._info.title.replaceAll('\n', ' ') + ':' + firstChild._info.note.replaceAll('\n', ' ') + ';'
+      } else if (that.isQuestionType(secondChild, 'WHY DOES')) {
+        narrative.problem += firstChild._info.title.replaceAll('\n', ' ') + ':' + firstChild._info.note.replaceAll('\n', ' ') + ';'
+      } else if (that.isQuestionType(secondChild, 'BE ADDRESSED FOR')) {
+        narrative.solution += firstChild._info.title.replaceAll('\n', ' ') + ':' + firstChild._info.note.replaceAll('\n', ' ') + ';'
+      }
+      firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
+    }
+    return narrative
+  }
+  getQuestionPurpose (question) {
+    let problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
+    if (problemStatementPromptRE.test(question)) {
+      return 'problemStatement'
+    }
+    let problemAnalysisPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
+    if (problemAnalysisPromptRE.test(question)) {
+      return 'problem'
+    }
+    let relevanceMappingPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    if (relevanceMappingPromptRE.test(question)) {
+      return 'relevance'
+    }
+    let solutionAnalysisPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
+    if (solutionAnalysisPromptRE.test(question)) {
+      return 'solution'
+    }
+    let solutionFeasibilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
+    if (solutionFeasibilityPromptRE.test(question)) {
+      return 'feasibility'
+    }
+    let solutionEffectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
+    if (solutionEffectivenessPromptRE.test(question)) {
+      return 'effectiveness'
     }
     return null
   }
