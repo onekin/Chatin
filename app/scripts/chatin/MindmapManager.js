@@ -765,7 +765,7 @@ class MindmapManager {
       let problems = narrative.problem.split(';')
       problems.pop()
       let currentProblem = problems.pop().split(':')
-      prompt += 'CONTEXT=[ One of the problems that arise during' + activity + ' in ' + practice + 'is ' + currentProblem[0] + ', which means that ' + currentProblem[1] + '.\n'
+      prompt += 'CONTEXT=[ One of the problems that arise during  ' + activity + ' in ' + practice + ' is  ' + currentProblem[0] + ', which means that ' + currentProblem[1] + '.\n'
       while (problems.length > 0) {
         let followingProblem = problems.pop().split(':')
         prompt += currentProblem[0] + ' occurs because ' + followingProblem[0] + ', which means that ' + followingProblem[1] + '\n'
@@ -776,7 +776,7 @@ class MindmapManager {
       let relevances = narrative.relevance.split(';')
       relevances.pop()
       let currentRelevance = relevances.pop().split(':')
-      prompt += 'This problem is relevant because consequences can be ' + currentRelevance[0] + ' which means that ' + currentRelevance[1] + '.\n'
+      prompt += 'This problem is relevant because ' + currentRelevance[0] + ' which means that ' + currentRelevance[1] + '.\n'
       while (relevances.length > 0) {
         currentRelevance = relevances.pop().split(':')
         prompt += 'It is also relevant because ' + currentRelevance[0] + ', which means that ' + currentRelevance[1] + '\n'
@@ -784,7 +784,7 @@ class MindmapManager {
     }
     if (narrative.solution) {
       let solution = narrative.solution.split(':')
-      prompt += 'This problem can be addressed by' + solution[0] + ' which means that ' + solution[1] + '.\n'
+      prompt += 'This problem can be addressed by  ' + solution[0] + ' which means that ' + solution[1] + '.\n'
     }
     if (narrative.feasability) {
       let feasabilities = narrative.feasability.split(';')
@@ -806,6 +806,71 @@ class MindmapManager {
         prompt += 'This can also help to ' + currentEffectiveness[0] + ', because ' + currentEffectiveness[1] + '\n'
       }
     }
+    prompt += 'Please, provide a narrative that ends up in the Research Question. You have to provide the response in JSON format including the narrative in a "answer" item. The format should be as follows:\n]'
+    prompt += '{\n' + '"narrative": "The narrative of the research question"\n' + '}\n'
+    return prompt
+  }
+
+  getPromptForNarrativeLines (question, narrative, variables) {
+    // let that = this
+    let numberOfLines = 0
+    let practice = variables.find((v) => { return v.name === 'Practice' }).value
+    let activity = variables.find((v) => { return v.name === 'Activity' }).value
+    let prompt = 'I want you to behave as an academic. Next I will provide you with a RESEARCH QUESTION and a set of text chunks that provide the CONTEXT where the Research Question aroses. I want you to provide a coherent narrative that ends up in the question Research Question\n'
+    prompt += 'RESEARCH QUESTION=[ ' + narrative.question + ']\n'
+    if (narrative.problem) {
+      let problems = narrative.problem.split(';')
+      problems.pop()
+      let currentProblem = problems.pop().split(':')
+      numberOfLines += 2
+      prompt += 'CONTEXT=[ One of the problems that arise during  ' + activity + ' in ' + practice + ' is  ' + currentProblem[0] + ', which means that ' + currentProblem[1] + '.\n'
+      while (problems.length > 0) {
+        let followingProblem = problems.pop().split(':')
+        numberOfLines += 2
+        prompt += currentProblem[0] + ' occurs because ' + followingProblem[0] + ', which means that ' + followingProblem[1] + '\n'
+        currentProblem = followingProblem
+      }
+    }
+    if (narrative.relevance) {
+      let relevances = narrative.relevance.split(';')
+      relevances.pop()
+      let currentRelevance = relevances.pop().split(':')
+      numberOfLines += 2
+      prompt += 'This problem is relevant because ' + currentRelevance[0] + ' which means that ' + currentRelevance[1] + '.\n'
+      while (relevances.length > 0) {
+        currentRelevance = relevances.pop().split(':')
+        prompt += 'It is also relevant because ' + currentRelevance[0] + ', which means that ' + currentRelevance[1] + '\n'
+      }
+    }
+    if (narrative.solution) {
+      let solution = narrative.solution.split(':')
+      numberOfLines += 2
+      prompt += 'This problem can be addressed by  ' + solution[0] + ' which means that ' + solution[1] + '.\n'
+    }
+    if (narrative.feasability) {
+      let feasabilities = narrative.feasability.split(';')
+      feasabilities.pop()
+      let currentFeasability = feasabilities.pop().split(':')
+      numberOfLines += 2
+      prompt += 'This solution can be implemented by ' + currentFeasability[0] + ' which means that ' + currentFeasability[1] + '.\n'
+      while (feasabilities.length > 0) {
+        currentFeasability = feasabilities.pop().split(':')
+        prompt += 'It can also be implemented by ' + currentFeasability[0] + ', which means that ' + currentFeasability[1] + '\n'
+      }
+    }
+    if (narrative.effectiveness) {
+      let effectivenesses = narrative.effectiveness.split(';')
+      effectivenesses.pop()
+      let currentEffectiveness = effectivenesses.pop().split(':')
+      numberOfLines += 2
+      prompt += 'This solution can help to ' + currentEffectiveness[0] + ' because ' + currentEffectiveness[1] + '.\n'
+      while (effectivenesses.length > 0) {
+        currentEffectiveness = effectivenesses.pop().split(':')
+        prompt += 'This can also help to ' + currentEffectiveness[0] + ', because ' + currentEffectiveness[1] + '\n'
+      }
+    }
+    prompt += 'Please, provide a narrative that ends up in the Research Question. You have to provide the response in JSON format including the narrative in a "answer" item. The format should be as follows:\n]'
+    prompt += '{\n' + '"narrative": "The narrative of the research question in ' + numberOfLines + ' lines "\n' + '}\n'
     return prompt
   }
   /**
@@ -985,8 +1050,45 @@ class MindmapManager {
     let that = this
     let variables = that._variables
     console.log('narrative', narrative)
-    let prompt = that.getPromptForNarrative(node, narrative, variables)
+    let prompt = that.getPromptForNarrativeLines(node, narrative, variables)
     console.log(prompt)
+    ChatGPTClient.getApiKey().then((key) => {
+      if (key !== null && key !== '') {
+        let callback = (json) => {
+          Alerts.closeLoadingWindow()
+          console.log(json)
+          let callback = () => {
+            // GPT Answers
+            let nodes = []
+            let RQAnswer =
+              {
+                text: json.narrative,
+                parentId: node.getAttribute('data-id')
+              }
+            nodes.push(RQAnswer)
+            MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
+              Alerts.closeLoadingWindow()
+            })
+          }
+          Alerts.infoAlert({
+            title: 'Narrative',
+            text: json.narrative,
+            callback: callback
+          })
+        }
+        Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
+        OpenAIManager.gptQuestion({
+          apiKey: key,
+          prompt: prompt,
+          callback: callback
+        })
+      } else {
+        Alerts.showErrorToast('No API key found for ChatGPT')
+      }
+    }).catch((error) => {
+      if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
+      else Alerts.showErrorToast(`ChatGPT error: ${error}`)
+    })
   }
   performAggregationQuestion (node) {
     let that = this
@@ -1522,6 +1624,7 @@ class MindmapManager {
     })
     let originalElement = elements.length > 0 ? elements[0] : null
     let transform = originalElement.parentElement.style.transform
+    // eslint-disable-next-line no-useless-escape
     let match = /translateX\((\d+)px\)\s*translateY\((\-?\d+)px\)/.exec(transform)
     let targetElement = null
     if (match) {

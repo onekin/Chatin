@@ -61,6 +61,31 @@ class Alerts {
     swal.close()
   }
 
+  static infoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK'}) {
+    Alerts.tryToLoadSwal()
+    if (_.isNull(swal)) {
+      if (_.isFunction(callback)) {
+        callback(new Error('Unable to load swal'))
+      }
+    } else {
+      swal.fire({
+        type: 'info',
+        title: title,
+        confirmButtonText: confirmButtonText,
+        html: '<div style="text-align: justify;text-justify: inter-word" width=700px>' + text + '</div>',
+        onBeforeOpen: () => {
+          let element = document.querySelector('.swal2-popup')
+          element.style.width = '550px'
+          // Add event listeners to the buttons after they are rendered
+        }
+      }).then(() => {
+        if (_.isFunction(callback)) {
+          callback(null)
+        }
+      })
+    }
+  }
+
   static multipleInputAlert ({title = 'Input', html = '', preConfirm, showCancelButton = true, callback}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {

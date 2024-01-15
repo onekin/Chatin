@@ -543,14 +543,23 @@ class MindmeisterBackground {
       let changeList = new ChangeList()
       nodes.forEach((n) => {
         if (n.image != null && !changeList.hasImage(n.image)) changeList.addImage(n.image)
-      })
-      this.uploadNeccesaryImagesForChangeList(mapId, changeList).then(() => {
-        nodes.forEach((n) => {
-          this.addNodeToChangeList(changeList, mapId, n)
-        })
-        that.doChanges(mapId, changeList.changes).then(() => {
-          resolve('ok')
-        })
+        if (n.image != null) {
+          this.uploadNeccesaryImagesForChangeList(mapId, changeList).then(() => {
+            nodes.forEach((n) => {
+              this.addNodeToChangeList(changeList, mapId, n)
+            })
+            that.doChanges(mapId, changeList.changes).then(() => {
+              resolve('ok')
+            })
+          })
+        } else {
+          nodes.forEach((n) => {
+            this.addNodeToChangeList(changeList, mapId, n)
+          })
+          that.doChanges(mapId, changeList.changes).then(() => {
+            resolve('ok')
+          })
+        }
       })
     })
   }
