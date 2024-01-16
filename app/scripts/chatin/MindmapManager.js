@@ -1066,7 +1066,7 @@ class MindmapManager {
                 parentId: node.getAttribute('data-id')
               }
             nodes.push(RQAnswer)
-            MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
+            MindmeisterClient.addNode(that._mapId, nodes).then(() => {
               Alerts.closeLoadingWindow()
             })
           }
@@ -1657,6 +1657,14 @@ class MindmapManager {
   }
   canBeAggregated () {
     return true
+  }
+  findIssue (text, nodeId) {
+    let id = nodeId > 0 ? nodeId : null
+    for (let i = 0; i < this._scopingAnalysis.length; i++) {
+      let issue = this._scopingAnalysis[i].findIssue(text, id)
+      if (issue != null) return issue
+    }
+    return null
   }
   hasQuestionType (node, questionType) {
     let foundNode = node.children.find((e) => { return e._info.title.replaceAll('\n', ' ').includes(questionType) })

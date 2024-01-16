@@ -6,7 +6,7 @@ const Utils = require('../utils/Utils')
 class HomePageManager {
   constructor () {
     this._templates = {
-      'chatin': 'resources/mindmapTemplates/RQScoping.mind'
+      'chatin': 'resources/mindmapTemplates/RQ_Scoping.mind'
     }
     // nothing todo here
   }

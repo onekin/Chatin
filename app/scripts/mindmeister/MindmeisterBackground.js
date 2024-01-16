@@ -1,5 +1,3 @@
-// const pdfjsLib = require('pdfjs-dist/legacy/build/pdf')
-// import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 
 const APIClientId = 'XxUt7w0Xri-9hmIvvRNaIbMe4HrOml2giLDT5qFT5W8'
 const TokenStorageKey = 'MINDMEISTER_ACCESS_TOKEN'
@@ -48,6 +46,8 @@ class MindmeisterBackground {
             //   that.changeNodeIcon(message.args.mapId, message.args.nodeId, message.args.icon).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
             // } else if (message.method === 'addNode') {
             //   that.addNode(message.args.mapId, message.args.parentId, message.args.newNode).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
+          } else if (message.method === 'addNode') {
+            that.addNode(message.args.mapId, message.args.newNode).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'addNodes') {
             that.addNodes(message.args.mapId, message.args.newNodes).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'removeNodes') {
@@ -538,6 +538,24 @@ class MindmeisterBackground {
   }
 
   addNodes (mapId, nodes) {
+    let that = this
+    return new Promise((resolve, reject) => {
+      let changeList = new ChangeList()
+      nodes.forEach((n) => {
+        if (n.image != null && !changeList.hasImage(n.image)) changeList.addImage(n.image)
+      })
+      this.uploadNeccesaryImagesForChangeList(mapId, changeList).then(() => {
+        nodes.forEach((n) => {
+          this.addNodeToChangeList(changeList, mapId, n)
+        })
+        that.doChanges(mapId, changeList.changes).then(() => {
+          resolve('ok')
+        })
+      })
+    })
+  }
+
+  addNode (mapId, nodes) {
     let that = this
     return new Promise((resolve, reject) => {
       let changeList = new ChangeList()

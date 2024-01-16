@@ -48,8 +48,8 @@ class MindmeisterClient {
     return this.processInBackground('changeNodeIcon', {mapId: mapId, nodeId: nodeId, icon: icon})
   }
 
-  static addNode (mapId, parentId, newNode) {
-    return this.processInBackground('addNode', {mapId: mapId, parentId: parentId, newNode: newNode})
+  static addNode (mapId, newNodes) {
+    return this.processInBackground('addNode', {mapId: mapId, newNodes: newNodes})
   }
 
   static addNodes (mapId, newNodes) {
