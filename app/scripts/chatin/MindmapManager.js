@@ -1047,6 +1047,7 @@ class MindmapManager {
     })
   }
   performNarrativeQuestion (node, narrative) {
+    Alerts.showLoadingWindow(`Creating prompt...`)
     let that = this
     let variables = that._variables
     console.log('narrative', narrative)
@@ -1058,6 +1059,7 @@ class MindmapManager {
           Alerts.closeLoadingWindow()
           console.log(json)
           let callback = () => {
+            Alerts.showLoadingWindow(`Creating mind map node...`)
             // GPT Answers
             let nodes = []
             let RQAnswer =

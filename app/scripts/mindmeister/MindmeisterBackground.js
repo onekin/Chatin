@@ -47,7 +47,7 @@ class MindmeisterBackground {
             // } else if (message.method === 'addNode') {
             //   that.addNode(message.args.mapId, message.args.parentId, message.args.newNode).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'addNode') {
-            that.addNode(message.args.mapId, message.args.newNode).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
+            that.addNode(message.args.mapId, message.args.newNodes).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'addNodes') {
             that.addNodes(message.args.mapId, message.args.newNodes).then((rsp) => sendResponse({response: rsp}), (error) => sendResponse({error: error}))
           } else if (message.method === 'removeNodes') {
@@ -560,24 +560,10 @@ class MindmeisterBackground {
     return new Promise((resolve, reject) => {
       let changeList = new ChangeList()
       nodes.forEach((n) => {
-        if (n.image != null && !changeList.hasImage(n.image)) changeList.addImage(n.image)
-        if (n.image != null) {
-          this.uploadNeccesaryImagesForChangeList(mapId, changeList).then(() => {
-            nodes.forEach((n) => {
-              this.addNodeToChangeList(changeList, mapId, n)
-            })
-            that.doChanges(mapId, changeList.changes).then(() => {
-              resolve('ok')
-            })
-          })
-        } else {
-          nodes.forEach((n) => {
-            this.addNodeToChangeList(changeList, mapId, n)
-          })
-          that.doChanges(mapId, changeList.changes).then(() => {
-            resolve('ok')
-          })
-        }
+        this.addNodeToChangeList(changeList, mapId, n)
+      })
+      that.doChanges(mapId, changeList.changes).then(() => {
+        resolve('ok')
       })
     })
   }

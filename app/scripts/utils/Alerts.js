@@ -75,7 +75,7 @@ class Alerts {
         html: '<div style="text-align: justify;text-justify: inter-word" width=700px>' + text + '</div>',
         onBeforeOpen: () => {
           let element = document.querySelector('.swal2-popup')
-          element.style.width = '550px'
+          element.style.width = '800px'
           // Add event listeners to the buttons after they are rendered
         }
       }).then(() => {
@@ -113,7 +113,7 @@ class Alerts {
       let numberInput = Math.floor(number / 2)
       let html = ''
       html += '<label for="numberInput">Enter a number (less than ' + number + '): </label>'
-      html += '<input type="number" id="numberInput" name="numberInput" value="5" min="1" max="' + (number - 1) + '" ><br>'
+      html += '<input type="number" id="numberInput" name="numberInput" value="' + numberInput + '" min="1" max="' + (number - 1) + '" ><br>'
       Alerts.multipleInputAlert({
         title: 'How many nodes do you want to cluster?',
         html: html,
