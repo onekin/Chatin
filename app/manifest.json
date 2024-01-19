@@ -51,7 +51,9 @@
     "declarativeNetRequest",
     "identity",
     "https://api.anthropic.com/*",
-    "https://api.anthropic.com"
+    "https://api.anthropic.com",
+    "clipboardWrite",
+    "clipboardRead"
   ],
   "host_permissions": [
     "https://www.mindmeister.com/oauth2",

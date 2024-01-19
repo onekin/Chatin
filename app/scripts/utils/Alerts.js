@@ -61,7 +61,7 @@ class Alerts {
     swal.close()
   }
 
-  static infoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK'}) {
+  static infoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', showCancelButton = true}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -71,6 +71,8 @@ class Alerts {
       swal.fire({
         type: 'info',
         title: title,
+        showCancelButton: showCancelButton,
+        cancelButtonText: 'Copy',
         confirmButtonText: confirmButtonText,
         html: '<div style="text-align: justify;text-justify: inter-word" width=700px>' + text + '</div>',
         onBeforeOpen: () => {
@@ -78,9 +80,19 @@ class Alerts {
           element.style.width = '800px'
           // Add event listeners to the buttons after they are rendered
         }
-      }).then(() => {
-        if (_.isFunction(callback)) {
-          callback(null)
+      }).then((result) => {
+        if (result.value) {
+          if (_.isFunction(callback)) {
+            callback(null, result.value)
+          }
+        } else {
+          navigator.clipboard.writeText(text)
+            .then(() => {
+              console.log('Text copied to clipboard')
+            })
+            .catch(err => {
+              console.error('Error in copying text: ', err)
+            })
         }
       })
     }
