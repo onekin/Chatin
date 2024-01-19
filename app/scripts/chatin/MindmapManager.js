@@ -451,11 +451,11 @@ class MindmapManager {
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
         prompt += '{"GPT_solution_name":"name for the solution",' +
-          '"description": "description of the problem",' +
+          '"description": "description of the solution",' +
           '}'
       } else {
         prompt += ',{"GPT_solution_name":"name for the solution",' +
-          '"description": "description of the problem",' +
+          '"description": "description of the solution",' +
           '}'
       }
     }
@@ -577,11 +577,11 @@ class MindmapManager {
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
         prompt += '{"GPT_solution_name":"name for the solution",\n' +
-          '"description": "description of the problem",\n' +
+          '"description": "description of the solution",\n' +
           '}'
       } else {
         prompt += ',{"GPT_solution_name":"name for the solution",\n' +
-          '"description": "description of the problem",\n' +
+          '"description": "description of the solution",\n' +
           '}\n'
       }
     }
@@ -696,13 +696,13 @@ class MindmapManager {
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
         prompt += '{"solution_name":"name for the solution",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
-          '"description": "description of the problem",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the solution]",\n' +
+          '"description": "description of the solution",\n' +
           '}\n'
       } else {
         prompt += ',{"solution_name":"name for the solution",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
-          '"description": "description of the problem",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the solution]",\n' +
+          '"description": "description of the solution",\n' +
           '}\n'
       }
     }
@@ -710,11 +710,11 @@ class MindmapManager {
       for (let i = 0; i < numberOfItems; i++) {
         if (i === 0) {
           prompt += '{"GPT_solution_name":"name for the solution",\n' +
-            '"description": "description of the problem",\n' +
+            '"description": "description of the solution",\n' +
             '}'
         } else {
           prompt += ',{"GPT_solution_name":"name for the solution",\n' +
-            '"description": "description of the problem",\n' +
+            '"description": "description of the solution",\n' +
             '}\n'
         }
       }
@@ -1233,7 +1233,7 @@ class MindmapManager {
     }
     pdfBasedItems.forEach((item) => {
       let name = Utils.findValuesEndingWithName(item, 'name')
-      pdfBasedItemsNodes.push({label: name, excerpt: '<em>' + item.excerpt + '</em>', description: item.excerpt})
+      pdfBasedItemsNodes.push({label: name, excerpt: '<em>' + item.excerpt + '</em>', description: item.description})
     })
     return {gptItemsNodes, pdfBasedItemsNodes}
   }
