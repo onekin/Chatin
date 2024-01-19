@@ -1,9 +1,9 @@
 const _ = require('lodash')
-const Alerts = require('../../utils/Alerts')
+const Alerts = require('../utils/Alerts')
 
-class OpenAIManager {
-  static async pdfBasedQuestion ({apiKey, documents, callback, prompt}) {
-    chrome.runtime.sendMessage({ scope: 'askLLM', cmd: 'openAI', data: {documents: documents, apiKey: apiKey, query: prompt} }, function (response) {
+class LLMClient {
+  static async pdfBasedQuestion ({apiKey, documents, callback, prompt, llm}) {
+    chrome.runtime.sendMessage({ scope: 'askLLM', cmd: llm, data: {documents: documents, apiKey: apiKey, query: prompt} }, function (response) {
       if (chrome.runtime.lastError) {
         Alerts.showErrorToast('Unable to ask OpenAI: ' + chrome.runtime.lastError.message)
       } else if (response.res.error) {
@@ -33,8 +33,8 @@ class OpenAIManager {
     })
   }
 
-  static async gptQuestion ({apiKey, callback, prompt}) {
-    chrome.runtime.sendMessage({ scope: 'askLLM', cmd: 'openAI', data: {apiKey: apiKey, query: prompt} }, function (response) {
+  static async simpleQuestion ({apiKey, callback, prompt, llm}) {
+    chrome.runtime.sendMessage({ scope: 'askLLM', cmd: llm, data: {apiKey: apiKey, query: prompt} }, function (response) {
       if (chrome.runtime.lastError) {
         Alerts.showErrorToast('Unable to ask OpenAI: ' + chrome.runtime.lastError.message)
       } else if (response.res.error) {
@@ -65,4 +65,4 @@ class OpenAIManager {
   }
 }
 
-module.exports = OpenAIManager
+module.exports = LLMClient

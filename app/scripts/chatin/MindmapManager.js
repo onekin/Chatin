@@ -1,11 +1,11 @@
 // import * as pdfjsLib from 'pdfjs-dist/webpack';
+const Config = require('../Config')
 const LLMTextUtils = require('../utils/LLMTextUtils')
-const OpenAIManager = require('../llm/openAI/OpenAIManager')
+const LLMClient = require('../llm/LLMClient')
 const MindmapWrapper = require('../mindmeister/wrapper/MindmapWrapper')
 const TemplateNodes = require('./TemplateNodes')
 const ModelDefaultValues = require('./ModelDefaultValues')
 const MindmeisterClient = require('../mindmeister/MindmeisterClient')
-const ChatGPTClient = require('../chatgpt/ChatGPTClient')
 const Alerts = require('../utils/Alerts')
 const MindmapContentParser = require('../mindmeister/wrapper/MindmapContentParser')
 const ProcessQuestions = require('./ProcessQuestions')
@@ -877,7 +877,7 @@ class MindmapManager {
    * Perform questions
    */
   performQuestion (node) {
-    Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
+    Alerts.showLoadingWindow('Creating prompt...')
     let that = this
     this.parseMap().then(() => {
       let questionNode = that._mindmapParser.getNodeById(node.id)
@@ -889,48 +889,55 @@ class MindmapManager {
         prompt = that.getPromptForGPTNodes(node.text)
       }
       console.log('prompt:\n ' + prompt)
-      ChatGPTClient.getApiKey().then((key) => {
-        if (key !== null && key !== '') {
-          let callback = (json) => {
-            Alerts.closeLoadingWindow()
-            const gptItemsNodes = that.parseChatGPTAnswer(json)
-            if (gptItemsNodes === null || gptItemsNodes.length === 0) {
-              Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
-            }
-            let labels, nodes
-            // GPT Answers
-            const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
-            let gptProblemsNodes = gptItemsNodes.map((c) => {
-              return {
-                text: c.label,
-                style: PromptStyles.AnswerItem,
-                image: IconsMap['tick-disabled'],
-                parentId: node.id,
-                note: c.description
-              }
-            })
-            labels = gptProblemsLabels
-            nodes = gptProblemsNodes
-            MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
-              Alerts.closeLoadingWindow()
-              if (this._processModes[0].enabled) {
-                let repeatedItems = labels.filter(label => that._problems.includes(label))
-                if (repeatedItems.length === 1) {
-                  Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
-                } else if (repeatedItems.length > 1) {
-                  Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
-                }
-              }
-            })
-          }
-          OpenAIManager.gptQuestion({
-            apiKey: key,
-            prompt: prompt,
-            callback: callback
-          })
-        } else {
-          Alerts.showErrorToast('No API key found for ChatGPT')
+      chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+        if (llm === '') {
+          llm = Config.defaultLLM
         }
+        Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
+        chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
+          if (apiKey !== null && apiKey !== '') {
+            let callback = (json) => {
+              Alerts.closeLoadingWindow()
+              const gptItemsNodes = that.parseChatGPTAnswer(json)
+              if (gptItemsNodes === null || gptItemsNodes.length === 0) {
+                Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
+              }
+              let labels, nodes
+              // GPT Answers
+              const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
+              let gptProblemsNodes = gptItemsNodes.map((c) => {
+                return {
+                  text: c.label,
+                  style: PromptStyles.AnswerItem,
+                  image: IconsMap['tick-disabled'],
+                  parentId: node.id,
+                  note: c.description
+                }
+              })
+              labels = gptProblemsLabels
+              nodes = gptProblemsNodes
+              MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
+                Alerts.closeLoadingWindow()
+                if (this._processModes[0].enabled) {
+                  let repeatedItems = labels.filter(label => that._problems.includes(label))
+                  if (repeatedItems.length === 1) {
+                    Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
+                  } else if (repeatedItems.length > 1) {
+                    Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+                  }
+                }
+              })
+            }
+            LLMClient.simpleQuestion({
+              apiKey: apiKey,
+              prompt: prompt,
+              llm: llm,
+              callback: callback
+            })
+          } else {
+            Alerts.showErrorToast('No API key found for ' + llm)
+          }
+        })
       }).catch((error) => {
         if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
         else Alerts.showErrorToast(`ChatGPT error: ${error}`)
@@ -938,7 +945,7 @@ class MindmapManager {
     })
   }
   performPDFBasedQuestion (node, id, name) {
-    Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
+    Alerts.showLoadingWindow(`Creating prompt...`)
     let that = this
     let chatGPTBasedAnswers = false
     this.parseMap().then(() => {
@@ -968,65 +975,75 @@ class MindmapManager {
             PDFJS.getDocument({ data: pdfData }).promise.then(async pdfDocument => {
               let documents = []
               documents = await LLMTextUtils.loadDocument(pdfDocument)
-              ChatGPTClient.getApiKey().then((key) => {
-                if (key !== null && key !== '') {
-                  let callback = (json) => {
-                    Alerts.closeLoadingWindow()
-                    const { gptItemsNodes, pdfBasedItemsNodes } = that.parseChatGPTAnswerFromJSON(json, chatGPTBasedAnswers)
-                    if ((gptItemsNodes === null || gptItemsNodes.length === 0) && pdfBasedItemsNodes.length === 0) {
-                      Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
-                    }
-                    let labels, nodes
-                    // PDF Answers
-                    const otherProblemsLabels = pdfBasedItemsNodes.map((c) => { return c.label })
-                    let otherProblemsNodes = pdfBasedItemsNodes.map((c) => {
-                      return {
-                        text: c.label,
-                        style: PromptStyles.AnswerItemPDFBased,
-                        image: IconsMap['tick-disabled'],
-                        parentId: node.id,
-                        note: c.description + '\n\n EXCERPT FROM ' + name + ':\n' + c.excerpt
+              chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+                if (llm === '') {
+                  llm = Config.defaultLLM
+                }
+                Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
+                chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
+                  if (apiKey !== null && apiKey !== '') {
+                    let callback = (json) => {
+                      Alerts.closeLoadingWindow()
+                      const {
+                        gptItemsNodes,
+                        pdfBasedItemsNodes
+                      } = that.parseChatGPTAnswerFromJSON(json, chatGPTBasedAnswers)
+                      if ((gptItemsNodes === null || gptItemsNodes.length === 0) && pdfBasedItemsNodes.length === 0) {
+                        Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
                       }
-                    })
-                    if (chatGPTBasedAnswers) {
-                      // GPT Answers
-                      const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
-                      let gptProblemsNodes = gptItemsNodes.map((c) => {
+                      let labels, nodes
+                      // PDF Answers
+                      const otherProblemsLabels = pdfBasedItemsNodes.map((c) => { return c.label })
+                      let otherProblemsNodes = pdfBasedItemsNodes.map((c) => {
                         return {
                           text: c.label,
-                          style: PromptStyles.AnswerItem,
+                          style: PromptStyles.AnswerItemPDFBased,
                           image: IconsMap['tick-disabled'],
                           parentId: node.id,
-                          note: c.description
+                          note: c.description + '\n\n EXCERPT FROM ' + name + ':\n' + c.excerpt
                         }
                       })
-                      labels = otherProblemsLabels.concat(gptProblemsLabels)
-                      nodes = otherProblemsNodes.concat(gptProblemsNodes)
-                    } else {
-                      labels = otherProblemsLabels
-                      nodes = otherProblemsNodes
-                    }
-                    MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
-                      Alerts.closeLoadingWindow()
-                      if (this._processModes[0].enabled) {
-                        let repeatedItems = labels.filter(label => that._problems.includes(label))
-                        if (repeatedItems.length === 1) {
-                          Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
-                        } else if (repeatedItems.length > 1) {
-                          Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
-                        }
+                      if (chatGPTBasedAnswers) {
+                        // GPT Answers
+                        const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
+                        let gptProblemsNodes = gptItemsNodes.map((c) => {
+                          return {
+                            text: c.label,
+                            style: PromptStyles.AnswerItem,
+                            image: IconsMap['tick-disabled'],
+                            parentId: node.id,
+                            note: c.description
+                          }
+                        })
+                        labels = otherProblemsLabels.concat(gptProblemsLabels)
+                        nodes = otherProblemsNodes.concat(gptProblemsNodes)
+                      } else {
+                        labels = otherProblemsLabels
+                        nodes = otherProblemsNodes
                       }
+                      MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
+                        Alerts.closeLoadingWindow()
+                        if (this._processModes[0].enabled) {
+                          let repeatedItems = labels.filter(label => that._problems.includes(label))
+                          if (repeatedItems.length === 1) {
+                            Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
+                          } else if (repeatedItems.length > 1) {
+                            Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+                          }
+                        }
+                      })
+                    }
+                    LLMClient.pdfBasedQuestion({
+                      apiKey: apiKey,
+                      documents: documents,
+                      prompt: prompt,
+                      llm: llm,
+                      callback: callback
                     })
+                  } else {
+                    Alerts.showErrorToast('No API key found for ChatGPT')
                   }
-                  OpenAIManager.pdfBasedQuestion({
-                    apiKey: key,
-                    documents: documents,
-                    prompt: prompt,
-                    callback: callback
-                  })
-                } else {
-                  Alerts.showErrorToast('No API key found for ChatGPT')
-                }
+                })
               })
             }).catch(error => {
               console.error('Error in processing PDF: ', error)
@@ -1053,46 +1070,53 @@ class MindmapManager {
     console.log('narrative', narrative)
     let prompt = that.getPromptForNarrativeLines(node, narrative, variables)
     console.log(prompt)
-    ChatGPTClient.getApiKey().then((key) => {
-      if (key !== null && key !== '') {
-        let callback = (json) => {
-          Alerts.closeLoadingWindow()
-          console.log(json)
-          let callback = () => {
-            Alerts.showLoadingWindow(`Creating mind map node...`)
-            // GPT Answers
-            let nodes = []
-            let RQAnswer =
-              {
-                text: json.narrative,
-                parentId: node.getAttribute('data-id')
-              }
-            nodes.push(RQAnswer)
-            MindmeisterClient.addNode(that._mapId, nodes).then(() => {
-              Alerts.closeLoadingWindow()
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+      if (llm === '') {
+        llm = Config.defaultLLM
+      }
+      chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
+        if (apiKey !== null && apiKey !== '') {
+          let callback = (json) => {
+            Alerts.closeLoadingWindow()
+            console.log(json)
+            let callback = () => {
+              Alerts.showLoadingWindow(`Creating mind map node...`)
+              // GPT Answers
+              let nodes = []
+              let RQAnswer =
+                {
+                  text: json.narrative,
+                  parentId: node.getAttribute('data-id')
+                }
+              nodes.push(RQAnswer)
+              MindmeisterClient.addNode(that._mapId, nodes).then(() => {
+                Alerts.closeLoadingWindow()
+              })
+            }
+            Alerts.infoAlert({
+              title: 'Narrative',
+              text: json.narrative,
+              callback: callback
             })
           }
-          Alerts.infoAlert({
-            title: 'Narrative',
-            text: json.narrative,
+          Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
+          LLMClient.simpleQuestion({
+            apiKey: apiKey,
+            prompt: prompt,
+            llm: llm,
             callback: callback
           })
+        } else {
+          Alerts.showErrorToast('No API key found for ChatGPT')
         }
-        Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
-        OpenAIManager.gptQuestion({
-          apiKey: key,
-          prompt: prompt,
-          callback: callback
-        })
-      } else {
-        Alerts.showErrorToast('No API key found for ChatGPT')
-      }
+      })
     }).catch((error) => {
       if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
       else Alerts.showErrorToast(`ChatGPT error: ${error}`)
     })
   }
   performAggregationQuestion (node) {
+    Alerts.showLoadingWindow('Creating prompt...')
     let that = this
     let prompt = ''
     let childrenNodes = node.children
@@ -1101,61 +1125,67 @@ class MindmapManager {
         if (err) {
           Alerts.showErrorToast('An error occurred')
         } else {
-          Alerts.showLoadingWindow(`Waiting for ChatGPT's answer...`)
           console.log('performAggregationQuestion')
           if (childrenNodes.length > 0) {
             prompt = that.getPromptForAggregation(node.text, childrenNodes, number)
             console.log('prompt: ' + prompt)
-            ChatGPTClient.getApiKey().then((key) => {
-              if (key !== null && key !== '') {
-                let callback = (json) => {
-                  Alerts.closeLoadingWindow()
-                  console.log(json)
-                  const gptItemsNodes = that.parseChatGPTAnswerFromAggregation(json)
-                  if (gptItemsNodes === null || gptItemsNodes.length === 0) {
-                    Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
-                  }
-                  let labels, nodes
-                  // GPT Answers
-                  const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
-                  let gptProblemsNodes = gptItemsNodes.map((c) => {
-                    return {
-                      text: c.label,
-                      style: PromptStyles.AnswerItemAggregation,
-                      image: IconsMap['tick-disabled'],
-                      parentId: node.id,
-                      note: c.description
+            chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+              if (llm === '') {
+                llm = Config.defaultLLM
+              }
+              Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
+              chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
+                if (apiKey !== null && apiKey !== '') {
+                  let callback = (json) => {
+                    Alerts.closeLoadingWindow()
+                    console.log(json)
+                    const gptItemsNodes = that.parseChatGPTAnswerFromAggregation(json)
+                    if (gptItemsNodes === null || gptItemsNodes.length === 0) {
+                      Alerts.showErrorToast(`There was an error parsing ChatGPT's answer. Check browser console to see the whole answer.`)
                     }
-                  })
-                  labels = gptProblemsLabels
-                  nodes = gptProblemsNodes
-                  let removeNodes = childrenNodes.map((c) => {
-                    return {
-                      id: c._info.id
-                    }
-                  })
-                  MindmeisterClient.removeNodes(that._mapId, removeNodes).then(() => {
-                    MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
-                      Alerts.closeLoadingWindow()
-                      if (this._processModes[0].enabled) {
-                        let repeatedItems = labels.filter(label => that._problems.includes(label))
-                        if (repeatedItems.length === 1) {
-                          Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
-                        } else if (repeatedItems.length > 1) {
-                          Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
-                        }
+                    let labels, nodes
+                    // GPT Answers
+                    const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
+                    let gptProblemsNodes = gptItemsNodes.map((c) => {
+                      return {
+                        text: c.label,
+                        style: PromptStyles.AnswerItemAggregation,
+                        image: IconsMap['tick-disabled'],
+                        parentId: node.id,
+                        note: c.description
                       }
                     })
+                    labels = gptProblemsLabels
+                    nodes = gptProblemsNodes
+                    let removeNodes = childrenNodes.map((c) => {
+                      return {
+                        id: c._info.id
+                      }
+                    })
+                    MindmeisterClient.removeNodes(that._mapId, removeNodes).then(() => {
+                      MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
+                        Alerts.closeLoadingWindow()
+                        if (this._processModes[0].enabled) {
+                          let repeatedItems = labels.filter(label => that._problems.includes(label))
+                          if (repeatedItems.length === 1) {
+                            Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
+                          } else if (repeatedItems.length > 1) {
+                            Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+                          }
+                        }
+                      })
+                    })
+                  }
+                  LLMClient.simpleQuestion({
+                    apiKey: apiKey,
+                    prompt: prompt,
+                    llm: llm,
+                    callback: callback
                   })
+                } else {
+                  Alerts.showErrorToast('No API key found for ' + llm)
                 }
-                OpenAIManager.gptQuestion({
-                  apiKey: key,
-                  prompt: prompt,
-                  callback: callback
-                })
-              } else {
-                Alerts.showErrorToast('No API key found for ChatGPT')
-              }
+              })
             }).catch((error) => {
               if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
               else Alerts.showErrorToast(`ChatGPT error: ${error}`)

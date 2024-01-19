@@ -13,8 +13,9 @@ const { TokenTextSplitter } = require('langchain/text_splitter')
 const { OpenAIEmbeddings } = require('langchain/embeddings/openai')
 const { MemoryVectorStore } = require('langchain/vectorstores/memory')
 const { PromptTemplate } = require('@langchain/core/prompts')
+const ChromeStorage = require('../utils/ChromeStorage')
 
-class LLMManager {
+class LLMManagerBackground {
   init () {
     // Initialize replier for requests related to storage
     this.initRespondent()
@@ -22,12 +23,72 @@ class LLMManager {
 
   initRespondent () {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.scope === 'llm') {
+        if (request.cmd === 'getSelectedLLM') {
+          ChromeStorage.getData('llm.selected', ChromeStorage.sync, (err, llm) => {
+            if (err) {
+              sendResponse({ err: err })
+            } else {
+              if (llm && llm.data) {
+                let parsedLLM = JSON.parse(llm.data)
+                sendResponse({ llm: parsedLLM || '' })
+              } else {
+                sendResponse({ llm: '' })
+              }
+            }
+          })
+        } else if (request.cmd === 'setSelectedLLM') {
+          let selectedLLM = request.data.llm
+          ChromeStorage.setData('llm.selected', { data: JSON.stringify(selectedLLM) }, ChromeStorage.sync, (err) => {
+            if (err) {
+              sendResponse({ err: err })
+            } else {
+              sendResponse({ llm: selectedLLM })
+            }
+          })
+        } else if (request.cmd === 'getAPIKEY') {
+          let llmKey = 'llm.' + request.data + 'key'
+          ChromeStorage.getData(llmKey, ChromeStorage.sync, (err, apiKey) => {
+            if (err) {
+              sendResponse({ err: err })
+            } else {
+              if (apiKey) {
+                let parsedKey = JSON.parse(apiKey.data)
+                sendResponse({ apiKey: parsedKey || '' })
+              } else {
+                sendResponse({ apiKey: '' })
+              }
+            }
+          })
+        } else if (request.cmd === 'setAPIKEY') {
+          let llm = 'llm.' + request.data.llm + 'key'
+          let apiKey = request.data.apiKey
+          ChromeStorage.setData(llm, { data: JSON.stringify(apiKey) }, ChromeStorage.sync, (err) => {
+            if (err) {
+              sendResponse({ err: err })
+            } else {
+              sendResponse({ apiKey: apiKey })
+            }
+          })
+        }
+        return true
+      }
+    })
+
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.scope === 'askLLM') {
         if (request.cmd === 'anthropic') {
-          this.askLLMAnthropic(request).then(
-            res => sendResponse({ res: res }),
-            err => sendResponse({ err: err }) // Return the error inside the message handler
-          )
+          if (request.data.documents) {
+            this.askLLMAnthropicAIWithDocuments(request).then(
+              res => sendResponse({ res: res }),
+              err => sendResponse({ err: err })
+            )// Return the error inside the message handler
+          } else {
+            this.askLLMAnthropic(request).then(
+              res => sendResponse({ res: res }),
+              err => sendResponse({ err: err })
+            )// Return the error inside the message handler
+          }
           return true // Return true inside the message handler
         } else if (request.cmd === 'openAI') {
           if (request.data.documents) {
@@ -217,6 +278,51 @@ class LLMManager {
   async askLLMAnthropic (request) {
     const apiKey = request.data.apiKey
     const query = request.data.query
+    // create model
+    let totalCompletionTokens = 0
+    let totalPromptTokens = 0
+    let totalExecutionTokens = 0
+    const model = new ChatAnthropic({
+      temperature: 0.2,
+      anthropicApiKey: apiKey,
+      modelName: 'claude-2.0',
+      callbacks: [
+        {
+          handleLLMEnd: (output, runId, parentRunId, tags) => {
+            const { completionTokens, promptTokens, totalTokens } = output.llmOutput?.tokenUsage || { completionTokens: 0, promptTokens: 0, totalTokens: 0 }
+
+            totalCompletionTokens += completionTokens
+            totalPromptTokens += promptTokens
+            totalExecutionTokens += totalTokens
+
+            console.log(`Total completion tokens: ${totalCompletionTokens}`)
+            console.log(`Total prompt tokens: ${totalPromptTokens}`)
+            console.log(`Total execution tokens: ${totalExecutionTokens}`)
+          }
+        }
+      ]
+    })
+
+    const promptTemplate = PromptTemplate.fromTemplate(
+      '{query}'
+    )
+    // Create QA chain
+    const chain = promptTemplate.pipe(model)
+    return chain.invoke({ query: query }).then(res => {
+      return res.text // Return the result so it can be used in the next .then()
+    }).catch(async err => {
+      console.log(err.toString())
+      if (err.toString().startsWith('Error: 401')) {
+        return { error: 'Incorrect API key provided.' }
+      } else {
+        return { error: err.toString() }
+      }
+    })
+  }
+
+  async askLLMAnthropicWithDocument (request) {
+    const apiKey = request.data.apiKey
+    const query = request.data.query
     const documents = request.data.documents
     // Create LLM
     let totalCompletionTokens = 0
@@ -261,4 +367,4 @@ class LLMManager {
   }
 }
 
-module.exports = LLMManager // Use module.exports for CommonJS
+module.exports = LLMManagerBackground // Use module.exports for CommonJS

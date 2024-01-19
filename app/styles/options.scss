@@ -1,6 +1,7 @@
 
 //@import '../../node_modules/bootstrap/dist/css/bootstrap';
 @import '../../node_modules/bootstrap-slider/dist/css/bootstrap-slider.min';
+@import '../../node_modules/bootstrap/scss/bootstrap';
 
 #mendeleyContainerBody.disabled{
   opacity: 0.5;
@@ -85,4 +86,50 @@ body{
 
 .chatgptModeDescription{
   margin-top: 5px;
+}
+
+div[aria-hidden="true"] {
+  display: none;
+}
+
+.requiredFormInput:after {
+  color: red;
+  content: " *";
+}
+
+input:invalid {
+  border-color: red;
+  border-width: 2px;
+}
+
+#toolset[aria-hidden="true"]{
+  display:none;
+}
+
+.toolButton {
+  width: 32px;
+  cursor: pointer;
+}
+
+.toolButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.clickableInfoSpan {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#saveQueryButton {
+  margin-right: 10px;
+}
+
+.logo {
+  height: 100px;
+  width: auto;
+}
+
+.promptTextArea {
+  width: 100%;
 }

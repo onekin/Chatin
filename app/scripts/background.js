@@ -1,7 +1,7 @@
 
 const MindmeisterBackground = require('./mindmeister/MindmeisterBackground')
 const ChatGPTBackground = require('./chatgpt/ChatGPTBackground')
-const LLMManager = require('./llm/LLMManager')
+const LLMManagerBackground = require('./llm/LLMManagerBackground')
 
 class Background {
   constructor () {
@@ -15,7 +15,7 @@ class Background {
     this._chatGPTManager = new ChatGPTBackground()
     this._chatGPTManager.init()
     // Initialize LLM manager
-    this.llmManager = new LLMManager()
+    this.llmManager = new LLMManagerBackground()
     this.llmManager.init()
 
     /* chrome.browserAction.onClicked.addListener(function () {
