@@ -894,6 +894,16 @@ class MindmapManager {
       } else {
         prompt = that.getPromptForGPTNodes(node.text)
       }
+      let title = null
+      let note = null
+      if (!questionNode._info.title.startsWith('WHICH')) {
+        const parent = that._mindmapParser.getNodeById(questionNode._info.parent)
+        note = parent._info.note.replaceAll('\n', ' ')
+        title = parent._info.title.replaceAll('\n', ' ')
+      }
+      if (note !== null) {
+        prompt = title + ' means that ' + note + '\n Based on that,' + prompt
+      }
       console.log('prompt:\n ' + prompt)
       chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
         if (llm === '') {
@@ -953,6 +963,17 @@ class MindmapManager {
     let chatGPTBasedAnswers = false
     this.parseMap().then(() => {
       let prompt = that.getPromptForPDFBasedQuestion(node.text, chatGPTBasedAnswers)
+      let title = null
+      let note = null
+      let questionNode = that._mindmapParser.getNodeById(node.id)
+      if (!questionNode._info.title.startsWith('WHICH')) {
+        const parent = that._mindmapParser.getNodeById(questionNode._info.parent)
+        note = parent._info.note.replaceAll('\n', ' ')
+        title = parent._info.title.replaceAll('\n', ' ')
+      }
+      if (note !== null) {
+        prompt = title + ' means that ' + note + '\n Based on that,' + prompt
+      }
       console.log('prompt: ' + prompt)
       // Ensure workerSrc is set before loading the document
       // eslint-disable-next-line no-undef
