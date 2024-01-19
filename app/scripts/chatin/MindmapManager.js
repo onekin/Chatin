@@ -15,6 +15,7 @@ const Problem = require('./model/Problem')
 const PromptStyles = require('./PromptStyles')
 const IconsMap = require('./IconsMap')
 const Utils = require('../utils/Utils')
+const Locators = require('../mindmeister/wrapper/Locators')
 // const pdfjsLib = require('pdfjs-dist/webpack.mjs')
 
 class MindmapManager {
@@ -59,8 +60,13 @@ class MindmapManager {
             if (mutation.addedNodes) {
               if (mutation.addedNodes.length > 0) {
                 const node = mutation.addedNodes[0]
-                if (node.innerText && node.innerText.includes('Attachments')) {
+                if (node.innerText && (node.innerText.includes('Attachments'))) {
                   that.manageAttachmentsMenu(that, node)
+                } else if (node.innerHTML && node.innerHTML.includes(Locators.PDF_ELEMENT) && node.innerHTML.includes('.pdf')) {
+                  console.log('PDF element found')
+                  let divs = document.querySelectorAll('div.kr-view')
+                  let targetDiv = Array.from(divs).find(div => div.getAttribute('style').includes('padding-top: 10px; padding-bottom: 10px; width: 320px; background-color: rgb(255, 255, 255);'))
+                  that.manageAttachmentsMenu(that, targetDiv)
                 } else if (node.innerText && node.innerText.includes('Drag & drop files')) {
                   that.manageContextMenu(that)
                 }
