@@ -86,7 +86,7 @@ class Alerts {
     }
   }
 
-  static multipleInputAlert ({title = 'Input', html = '', preConfirm, showCancelButton = true, callback}) {
+  static multipleInputAlert ({title = 'Input', html = '', preConfirm, showCancelButton = true, callback, allowOutsideClick = true}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -98,10 +98,13 @@ class Alerts {
         html: html,
         focusConfirm: false,
         preConfirm: preConfirm,
-        showCancelButton: showCancelButton
-      }).then(() => {
-        if (_.isFunction(callback)) {
-          callback(null)
+        showCancelButton: showCancelButton,
+        allowOutsideClick: allowOutsideClick
+      }).then((result) => {
+        if (result.value) {
+          if (_.isFunction(callback)) {
+            callback(null, result.value)
+          }
         }
       })
     }
@@ -122,6 +125,7 @@ class Alerts {
           numberInput = document.querySelector('#numberInput').value
         },
         showCancelButton: true,
+        allowOutsideClick: false,
         callback: (err) => {
           if (err) {
             callback(new Error('Unable to read json file: ' + err.message))

@@ -938,9 +938,6 @@ class MindmapManager {
             Alerts.showErrorToast('No API key found for ' + llm)
           }
         })
-      }).catch((error) => {
-        if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
-        else Alerts.showErrorToast(`ChatGPT error: ${error}`)
       })
     })
   }
@@ -1186,9 +1183,6 @@ class MindmapManager {
                   Alerts.showErrorToast('No API key found for ' + llm)
                 }
               })
-            }).catch((error) => {
-              if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
-              else Alerts.showErrorToast(`ChatGPT error: ${error}`)
             })
           }
         }
