@@ -4,6 +4,7 @@ const MindmeisterClient = require('./mindmeister/MindmeisterClient')
 const MindmapManager = require('./chatin/MindmapManager')
 const HomePageManager = require('./chatin/HomePageManager')
 const Alerts = require('./utils/Alerts')
+const Locators = require('./mindmeister/wrapper/Locators')
 
 class ContentScript {
   constructor () {
@@ -26,6 +27,11 @@ class ContentScript {
       // }, (error) => {
       //  Alerts.showErrorToast('Chatin requires an ChatGPT API key')
       // })
+      setInterval(() => {
+        let homepageUrlPattern = /https?:\/\/www\.mindmeister\.com\/(app\/folders|folders|maps|app\/maps)\/?/
+        let chatinIcon = document.querySelector(Locators.CHATIN_MINDMAP_TEMPLATE)
+        if (homepageUrlPattern.test(window.location.href) && chatinIcon === null) this._homepageManager.init()
+      }, 2000)
     }, () => {
       Alerts.showErrorToast('Chatin requires that you authorize it to interact with your Mindmeister account')
     })
