@@ -61,7 +61,7 @@ class Alerts {
     swal.close()
   }
 
-  static infoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', showCancelButton = true}) {
+  static showNarrative ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', showCancelButton = true}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -93,6 +93,35 @@ class Alerts {
             .catch(err => {
               console.error('Error in copying text: ', err)
             })
+        }
+      })
+    }
+  }
+
+  static infoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', cancelButtonText = 'Cancel', showCancelButton = true}) {
+    Alerts.tryToLoadSwal()
+    if (_.isNull(swal)) {
+      if (_.isFunction(callback)) {
+        callback(new Error('Unable to load swal'))
+      }
+    } else {
+      swal.fire({
+        type: 'info',
+        title: title,
+        showCancelButton: showCancelButton,
+        cancelButtonText: cancelButtonText,
+        confirmButtonText: confirmButtonText,
+        html: text,
+        onBeforeOpen: () => {
+          let element = document.querySelector('.swal2-popup')
+          element.style.width = '800px'
+          // Add event listeners to the buttons after they are rendered
+        }
+      }).then((result) => {
+        if (result.value) {
+          if (_.isFunction(callback)) {
+            callback(null, result.value)
+          }
         }
       })
     }

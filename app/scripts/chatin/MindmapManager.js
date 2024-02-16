@@ -23,22 +23,16 @@ class MindmapManager {
     let that = this
     this._mapId = null
     this._processModes = [
-      { name: 'PROBLEM_DEEPEN',
-        templateNodeText: TemplateNodes.PROBLEM_DEEPEN_MODE,
+      { name: 'PROBLEM_ARTICULATION',
+        templateNodeText: TemplateNodes.PROBLEM_ARTICULATION_MODE,
         mindmapNode: null,
-        onEnable: () => { that.enableProblemDeepen() },
+        onEnable: () => { that.enableProblemArticulation() },
         enabled: false
       },
-      { name: 'RELEVANCE_MAPPING',
-        templateNodeText: TemplateNodes.RELEVANCE_MAPPING_MODE,
+      { name: 'CONSEQUENCE_MAPPING',
+        templateNodeText: TemplateNodes.CONSEQUENCE_MAPPING_MODE,
         mindmapNode: null,
         onEnable: () => { that.enableRelevanceMapping() },
-        enabled: false
-      },
-      { name: 'SOLUTION_MAPPING',
-        templateNodeText: TemplateNodes.SOLUTION_MAPPING_MODE,
-        mindmapNode: null,
-        onEnable: () => { that.enableSolutionMapping() },
         enabled: false
       }
     ]
@@ -207,7 +201,7 @@ class MindmapManager {
       })
     })
   }
-  enableProblemDeepen () {
+  enableProblemArticulation () {
     let that = this
     that.parseMap().then((mapInfo) => {
       let scopingAnalysisNodes = this._mindmapParser.getNodesWithText(TemplateNodes.SCOPING_ANALYSIS)
@@ -224,7 +218,7 @@ class MindmapManager {
       if (missingItems.length > 0) {
         Alerts.showErrorToast(`Missing variables: ${missingItems}`)
       } else {
-        let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'PROBLEM_DEEPEN' }))
+        let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'PROBLEM_ARTICULATION' }))
         MindmeisterClient.doActions(that._mapId, [{text: question, parentId: scopingAnalysisNode.id, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}], modeChanges).then(() => {
           Alerts.closeLoadingWindow()
         })
@@ -233,20 +227,13 @@ class MindmapManager {
   }
   enableRelevanceMapping () {
     let that = this
-    let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'RELEVANCE_MAPPING' }))
+    let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'CONSEQUENCE_MAPPING' }))
     MindmeisterClient.doActions(that._mapId, [], modeChanges).then(() => {
       // location.reload()
       Alerts.closeLoadingWindow()
     })
   }
-  enableSolutionMapping () {
-    let that = this
-    let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'SOLUTION_MAPPING' }))
-    MindmeisterClient.doActions(that._mapId, [], modeChanges).then(() => {
-      // location.reload()
-      Alerts.closeLoadingWindow()
-    })
-  }
+
   /**
    *  Manage editor changes
    */
@@ -306,19 +293,46 @@ class MindmapManager {
               })
             })
           }
-          if (that.canBeAggregated()) {
-            // Create a duplicate of the div
-            let aggregateButton = div.cloneNode(true)
+          // Create a duplicate of the div
+          let aggregateButton = div.cloneNode(true)
+          // Optionally, you can change the content or attributes of the duplicate
+          aggregateButton.textContent = 'Aggregate' // Changing the text content to 'Aggregate'
+          aggregateButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
+          // Insert the duplicate after the original div
+          div.parentNode.insertBefore(aggregateButton, aggregateButton.nextSibling)
+          aggregateButton.addEventListener('click', function (event) {
+            console.log('click on Aggregate')
+            that.parseMap().then(() => {
+              let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+              if (that.canBeAggregated(questionNodeObject)) {
+                Alerts.infoAlert({
+                  title: 'Aggregation',
+                  text: 'This operation will remove relevant information within the aggregated nodes. Do you want to continue?',
+                  showCancelButton: true,
+                  confirmButtonText: 'Yes',
+                  cancelButtonText: 'No',
+                  callback: () => {
+                    that.performAggregationQuestion(questionNodeObject)
+                  }
+                })
+              } else {
+                that.performAggregationQuestion(questionNodeObject)
+              }
+            })
+          })
+        } else {
+          if (that.isAnswerNode(questionNode)) {
+            let consensusButton = div.cloneNode(true)
             // Optionally, you can change the content or attributes of the duplicate
-            aggregateButton.textContent = 'Aggregate' // Changing the text content to 'Aggregate'
-            aggregateButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
+            consensusButton.textContent = 'Consensus' // Changing the text content to 'Aggregate'
+            consensusButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
             // Insert the duplicate after the original div
-            div.parentNode.insertBefore(aggregateButton, aggregateButton.nextSibling)
-            aggregateButton.addEventListener('click', function (event) {
-              console.log('click on Aggregate')
+            div.parentNode.insertBefore(consensusButton, div.nextSibling)
+            consensusButton.addEventListener('click', function (event) {
+              console.log('click on Consensus')
               that.parseMap().then(() => {
                 let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
-                that.performAggregationQuestion(questionNodeObject)
+                console.log('click on Consensus')
               })
             })
           }
@@ -395,15 +409,9 @@ class MindmapManager {
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
       prompt = that.getPromptForGPTProblemNodes(question, numberOfItems, description)
     }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (relevancePromptRE.test(question)) {
       prompt = that.getPromptForGPTRelevanceNodes(question, numberOfItems, description)
-    }
-    const solutionPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
-    const feasabilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
-    const effectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
-    if (solutionPromptRE.test(question) || feasabilityPromptRE.test(question) || effectivenessPromptRE.test(question)) {
-      prompt = that.getPromptForGPTSolutionNodes(question, numberOfItems, description)
     }
     return prompt
   }
@@ -414,11 +422,11 @@ class MindmapManager {
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
         prompt += '{"GPT_problem_name":"name for the problem",' +
-          '"description": "description of the problem",' +
+          '"description": "description of the problem that ' + description + '",' +
           '}'
       } else {
         prompt += ',{"GPT_problem_name":"name for the problem",' +
-          '"description": "description of the problem",' +
+          '"description": "description of the problem that ' + description + '",' +
           '}'
       }
     }
@@ -432,34 +440,15 @@ class MindmapManager {
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
         prompt += '{"GPT_relevance_name":"relevance name",' +
-          '"description": "description of the relevance reason",' +
+          '"description": "description of the relevance reason that ' + description + '",' +
           '}'
       } else {
         prompt += ',{"GPT_relevance_name":"relevance name",' +
-          '"description": "description of the relevance reason",' +
+          '"description": "description of the relevance reason that ' + description + '",' +
           '}'
       }
     }
     prompt += '\n]\n' + '}'
-    return prompt
-  }
-  getPromptForGPTSolutionNodes (question, numberOfItems, description) {
-    let prompt = question + '. Think some innovative ideas and please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
-    prompt += '{\n' + '"solutions": ['
-
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_solution_name":"name for the solution",' +
-          '"description": "description of the solution",' +
-          '}'
-      } else {
-        prompt += ',{"GPT_solution_name":"name for the solution",' +
-          '"description": "description of the solution",' +
-          '}'
-      }
-    }
-    prompt += ',\n]\n' + '}'
     return prompt
   }
   // PROMPTS FOR GPT BASED QUESTION FOR ALTERNATIVE NODES
@@ -485,7 +474,7 @@ class MindmapManager {
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
       prompt = that.getPromptForGPTAlternativeProblemNodes(question, numberOfItems, description, chatGPTBasedAnswers)
     }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (relevancePromptRE.test(question)) {
       prompt = that.getPromptForGPTAlternativeRelevanceNodes(question, numberOfItems, description, chatGPTBasedAnswers)
     }
@@ -558,36 +547,6 @@ class MindmapManager {
     prompt += '\n]\n' + '}\n'
     return prompt
   }
-  getPromptForGPTAlternativeSolutionNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = ''
-    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
-          '}\n'
-      } else {
-        prompt += ',{"GPT_solution_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
-          '}\n'
-      }
-    }
-    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description + '\n'
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
-    prompt += '{\n' + '"solutions": [\n'
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_solution_name":"name for the solution",\n' +
-          '"description": "description of the solution",\n' +
-          '}'
-      } else {
-        prompt += ',{"GPT_solution_name":"name for the solution",\n' +
-          '"description": "description of the solution",\n' +
-          '}\n'
-      }
-    }
-    prompt += ',\n]\n' + '}\n'
-    return prompt
-  }
   // PROMPTS FOR PDF BASED QUESTION
   getPromptForPDFBasedQuestion (question, chatGPTBasedAnswers) {
     let that = this
@@ -611,15 +570,9 @@ class MindmapManager {
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
       prompt = that.getPDFBasedProblemPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
     }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (relevancePromptRE.test(question)) {
       prompt = that.getPDFBasedRelevancePrompt(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    const solutionPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
-    const feasabilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
-    const effectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
-    if (solutionPromptRE.test(question) || feasabilityPromptRE.test(question) || effectivenessPromptRE.test(question)) {
-      prompt = that.getPDFBasedSolutionPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
     }
     return prompt
   }
@@ -689,39 +642,6 @@ class MindmapManager {
     prompt += '\n]\n' + '}\n'
     return prompt
   }
-  getPDFBasedSolutionPrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = 'Using the solutions and ideas in the provided pdf, ' + question + '. Think some innovative ideas and please provide ' + numberOfItems + ' items with descriptions that ' + description + '\n'
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:\n'
-    prompt += '{\n' + '"solutions": [\n'
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"solution_name":"name for the solution",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the solution]",\n' +
-          '"description": "description of the solution",\n' +
-          '}\n'
-      } else {
-        prompt += ',{"solution_name":"name for the solution",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the solution]",\n' +
-          '"description": "description of the solution",\n' +
-          '}\n'
-      }
-    }
-    if (chatGPTBasedAnswers) {
-      for (let i = 0; i < numberOfItems; i++) {
-        if (i === 0) {
-          prompt += '{"GPT_solution_name":"name for the solution",\n' +
-            '"description": "description of the solution",\n' +
-            '}'
-        } else {
-          prompt += ',{"GPT_solution_name":"name for the solution",\n' +
-            '"description": "description of the solution",\n' +
-            '}\n'
-        }
-      }
-    }
-    prompt += ',\n]\n' + '}'
-    return prompt
-  }
   // PROMPTS FOR AGGREGATION QUESTION
   getPromptForAggregation (question, nodes, number) {
     // let that = this
@@ -742,7 +662,6 @@ class MindmapManager {
     prompt += 'Summarization. I want you to behave as an academic. I have provided a QUESTION above and then a set of answers with descriptions in a JSON. Answers might not be fully alternative but some nuisance might exists among them. I want you to cluster the set of answers in ' + number + ' clusters that encloses those answers that are semantically closer.' + '\n'
     prompt += ' You have to provide the response in JSON format including each clustered item in an array. The format should be as follows:\n'
     prompt += '{\n' + '"clusters": [\n'
-
     for (let i = 0; i < number; i++) {
       if (i === 0) {
         prompt += '{\n' +
@@ -846,33 +765,6 @@ class MindmapManager {
       while (relevances.length > 0) {
         currentRelevance = relevances.pop().split(':')
         prompt += 'It is also relevant because ' + currentRelevance[0] + ', which means that ' + currentRelevance[1] + '\n'
-      }
-    }
-    if (narrative.solution) {
-      let solution = narrative.solution.split(':')
-      numberOfLines += 2
-      prompt += 'This problem can be addressed by  ' + solution[0] + ' which means that ' + solution[1] + '.\n'
-    }
-    if (narrative.feasability) {
-      let feasabilities = narrative.feasability.split(';')
-      feasabilities.pop()
-      let currentFeasability = feasabilities.pop().split(':')
-      numberOfLines += 2
-      prompt += 'This solution can be implemented by ' + currentFeasability[0] + ' which means that ' + currentFeasability[1] + '.\n'
-      while (feasabilities.length > 0) {
-        currentFeasability = feasabilities.pop().split(':')
-        prompt += 'It can also be implemented by ' + currentFeasability[0] + ', which means that ' + currentFeasability[1] + '\n'
-      }
-    }
-    if (narrative.effectiveness) {
-      let effectivenesses = narrative.effectiveness.split(';')
-      effectivenesses.pop()
-      let currentEffectiveness = effectivenesses.pop().split(':')
-      numberOfLines += 2
-      prompt += 'This solution can help to ' + currentEffectiveness[0] + ' because ' + currentEffectiveness[1] + '.\n'
-      while (effectivenesses.length > 0) {
-        currentEffectiveness = effectivenesses.pop().split(':')
-        prompt += 'This can also help to ' + currentEffectiveness[0] + ', because ' + currentEffectiveness[1] + '\n'
       }
     }
     prompt += 'Please, provide a narrative that ends up in the Research Question. You have to provide the response in JSON format including the narrative in a "answer" item. The format should be as follows:\n]'
@@ -1117,7 +1009,7 @@ class MindmapManager {
                 Alerts.closeLoadingWindow()
               })
             }
-            Alerts.infoAlert({
+            Alerts.showNarrative({
               title: 'Narrative',
               text: json.narrative,
               callback: callback
@@ -1131,12 +1023,9 @@ class MindmapManager {
             callback: callback
           })
         } else {
-          Alerts.showErrorToast('No API key found for ChatGPT')
+          Alerts.showErrorToast('No API key found ' + llm)
         }
       })
-    }).catch((error) => {
-      if (error === 'Unable to obtain ChatGPT token') Alerts.showErrorToast(`You must be logged in ChatGPT`)
-      else Alerts.showErrorToast(`ChatGPT error: ${error}`)
     })
   }
   performAggregationQuestion (node) {
@@ -1308,14 +1197,11 @@ class MindmapManager {
         return
       }
       switch (enabledMode.name) {
-        case 'PROBLEM_DEEPEN':
+        case 'PROBLEM_ARTICULATION':
           that.onClickAnswerProblemDeepen(uiNode, issue)
           break
-        case 'RELEVANCE_MAPPING':
-          that.onClickAnswerRelevanceMapping(uiNode, issue)
-          break
-        case 'SOLUTION_MAPPING':
-          that.onClickAnswerSolutionMapping(uiNode, issue)
+        case 'CONSEQUENCE_MAPPING':
+          that.onClickAnswerConsequenceMapping(uiNode, issue)
           break
       }
     }).catch((error) => {
@@ -1348,12 +1234,12 @@ class MindmapManager {
       })
     }
   }
-  onClickAnswerRelevanceMapping (uiNode, issue) {
+  onClickAnswerConsequenceMapping (uiNode, issue) {
     if (!(issue instanceof Problem)) {
       Alerts.showErrorToast('Invalid mode')
       return
     }
-    let question = ProcessQuestions.RELEVANCE_MAPPING
+    let question = ProcessQuestions.CONSEQUENCE_MAPPING
     question = question.replace('<problem>', issue.text)
     let items = MindmapManager.extractQuestionItems(question)
     items.forEach((i) => {
@@ -1371,63 +1257,6 @@ class MindmapManager {
       ).then(() => {
         Alerts.closeLoadingWindow()
       })
-    }
-  }
-  onClickAnswerSolutionMapping (uiNode, issue) {
-    if (issue instanceof Problem || issue instanceof Consequence) {
-      let question = ProcessQuestions.SOLUTION_ANALYSIS
-      question = question.replace('<problem>', issue.text)
-      let items = MindmapManager.extractQuestionItems(question)
-      items.forEach((i) => {
-        let v = this._variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
-        if (v == null) return
-        question = question.replace(`<${i}>`, v.value)
-      })
-      let missingItems = MindmapManager.extractQuestionItems(question)
-      if (missingItems.length > 0) {
-        Alerts.showErrorToast(`Missing variables: ${missingItems}`)
-      } else {
-        MindmeisterClient.doActions(this._mapId,
-          [{text: question, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
-          [{id: issue.nodeId, image: IconsMap['tick-enabled']}]
-        ).then(() => {
-          Alerts.closeLoadingWindow()
-          // location.reload()
-        })
-      }
-    } else if (issue instanceof Intervention) {
-      let question1 = ProcessQuestions.SOLUTION_EFFECTIVENESS
-      let question2 = ProcessQuestions.SOLUTION_FEASIBILITY
-      question1 = question1.replace('<problem>', issue.issue.text)
-      question1 = question1.replace('<intervention>', issue.text)
-      question2 = question2.replace('<problem>', issue.issue.text)
-      question2 = question2.replace('<intervention>', issue.text)
-
-      let items = MindmapManager.extractQuestionItems(question1)
-      items.forEach((i) => {
-        let v = this._variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
-        if (v == null) return
-        question1 = question1.replace(`<${i}>`, v.value)
-      })
-      items = MindmapManager.extractQuestionItems(question2)
-      items.forEach((i) => {
-        let v = this._variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
-        if (v == null) return
-        question2 = question2.replace(`<${i}>`, v.value)
-      })
-
-      let missingItems = MindmapManager.extractQuestionItems(question1)
-      let missingItems2 = MindmapManager.extractQuestionItems(question2)
-      if (missingItems.length > 0 || missingItems2.length > 0) {
-        Alerts.showErrorToast(`Missing variables: ${missingItems}`)
-      } else {
-        MindmeisterClient.doActions(this._mapId,
-          [{text: question1, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}, {text: question2, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
-          [{id: issue.nodeId, image: IconsMap['tick-enabled']}]
-        ).then(() => {
-          Alerts.closeLoadingWindow()
-        })
-      }
     }
   }
   getAnswerNodes () {
@@ -1525,23 +1354,13 @@ class MindmapManager {
         })
       }
     })
-    let consequencesPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    let consequencesPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     problemNodeChildren.forEach((c) => {
       if (consequencesPromptRE.test(c.text)) {
         c.children.forEach((p) => {
           let cons = new Consequence(p.text, p.id, problem)
           problem.addConsequence(cons)
           that.parseConsequence(cons)
-        })
-      }
-    })
-    let interventionsPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
-    problemNodeChildren.forEach((c) => {
-      if (interventionsPromptRE.test(c.text)) {
-        c.children.forEach((p) => {
-          let int = new Intervention(p.text, p.id, problem)
-          problem.addIntervention(int)
-          that.parseIntervention(int)
         })
       }
     })
@@ -1708,9 +1527,20 @@ class MindmapManager {
       return false
     }
   }
-  canBeAggregated () {
-    return true
+  isAnswerNode (questionNode) {
+    if (questionNode.style.backgroundColor === PromptStyles.AnswerItem.backgroundColor || questionNode.style.backgroundColor === PromptStyles.AnswerItemPDFBased.backgroundColor || questionNode.style.backgroundColor === PromptStyles.AnswerItemAggregation.backgroundColor) {
+      return true
+    } else {
+      return false
+    }
   }
+  canBeAggregated (questionNode) {
+    const hasChildWithChildren = questionNode.children.some((child) => {
+      return child.children && child.children.length > 0
+    })
+    return hasChildWithChildren
+  }
+
   findIssue (text, nodeId) {
     let id = nodeId > 0 ? nodeId : null
     for (let i = 0; i < this._scopingAnalysis.length; i++) {
@@ -1742,7 +1572,7 @@ class MindmapManager {
     let text = ''
     let textNode = node.children.find((e) => { return e._info.title.replaceAll('\n', ' ').includes(questionType) })
     textNode.children.forEach((e) => {
-      text += e._info.title.replaceAll('\n', ' ') + ':' + e._info.note.replaceAll('\n', ' ') + ';'
+      text += e._info.title.replaceAll('\n', ' ') + ':' + e._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
     })
     return text
   }
@@ -1753,7 +1583,7 @@ class MindmapManager {
     let firstChild = that._mindmapParser.getNodeById(questionNode._info.parent)
     while (firstChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
       if (that.hasQuestionType(firstChild, 'WHY IS') && RQPurpose !== 'relevance') {
-        narrative.relevance = that.getQuestionTypeAnswers(firstChild, 'WHY IS')
+        narrative.relevance = that.getQuestionTypeAnswers(firstChild, 'WHICH CONSEQUENCES')
       }
       if (that.hasQuestionType(firstChild, 'BE IMPLEMENTED TO') && RQPurpose !== 'feasability') {
         narrative.feasability = that.getQuestionTypeAnswers(firstChild, 'BE IMPLEMENTED TO')
@@ -1763,11 +1593,11 @@ class MindmapManager {
       }
       let secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
       if (that.isQuestionType(secondChild, 'WHICH PROBLEMS')) {
-        narrative.problem += firstChild._info.title.replaceAll('\n', ' ') + ':' + firstChild._info.note.replaceAll('\n', ' ') + ';'
+        narrative.problem += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + firstChild._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
       } else if (that.isQuestionType(secondChild, 'WHY DOES')) {
-        narrative.problem += firstChild._info.title.replaceAll('\n', ' ') + ':' + firstChild._info.note.replaceAll('\n', ' ') + ';'
+        narrative.problem += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + firstChild._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
       } else if (that.isQuestionType(secondChild, 'BE ADDRESSED FOR')) {
-        narrative.solution += firstChild._info.title.replaceAll('\n', ' ') + ':' + firstChild._info.note.replaceAll('\n', ' ') + ';'
+        narrative.solution += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + firstChild._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
       }
       firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
     }
@@ -1782,21 +1612,9 @@ class MindmapManager {
     if (problemAnalysisPromptRE.test(question)) {
       return 'problem'
     }
-    let relevanceMappingPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.RELEVANCE_MAPPING)
+    let relevanceMappingPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (relevanceMappingPromptRE.test(question)) {
       return 'relevance'
-    }
-    let solutionAnalysisPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
-    if (solutionAnalysisPromptRE.test(question)) {
-      return 'solution'
-    }
-    let solutionFeasibilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
-    if (solutionFeasibilityPromptRE.test(question)) {
-      return 'feasibility'
-    }
-    let solutionEffectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
-    if (solutionEffectivenessPromptRE.test(question)) {
-      return 'effectiveness'
     }
     return null
   }
