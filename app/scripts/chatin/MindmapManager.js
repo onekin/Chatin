@@ -320,6 +320,23 @@ class MindmapManager {
               }
             })
           })
+          let consensusButton = div.cloneNode(true)
+          // Optionally, you can change the content or attributes of the duplicate
+          consensusButton.textContent = 'Consensus' // Changing the text content to 'Aggregate'
+          consensusButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
+          // Insert the duplicate after the original div
+          div.parentNode.insertBefore(consensusButton, div.nextSibling)
+          consensusButton.addEventListener('click', function (event) {
+            console.log('click on Consensus')
+            that.parseMap().then(() => {
+              let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+              const nodeText = questionNodeObject._info.title
+              const encodedUri = encodeURIComponent(nodeText)
+              const uri = 'https://consensus.app/results/?q=' + encodedUri
+              window.open(uri)
+              console.log('click on Consensus')
+            })
+          })
         } else {
           if (that.isAnswerNode(questionNode)) {
             let consensusButton = div.cloneNode(true)
@@ -331,7 +348,15 @@ class MindmapManager {
             consensusButton.addEventListener('click', function (event) {
               console.log('click on Consensus')
               that.parseMap().then(() => {
+                let variables = that._variables
+                let practice = variables.find((v) => { return v.name === 'Practice' }).value
+                let activity = variables.find((v) => { return v.name === 'Activity' }).value
                 let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+                const nodeText = questionNodeObject._info.title
+                const question = 'How can ' + nodeText + ' be lessen in ' + practice + ' to ' + activity + '?'
+                const encodedUri = encodeURIComponent(question)
+                const uri = 'https://consensus.app/results/?q=' + encodedUri
+                window.open(uri)
                 console.log('click on Consensus')
               })
             })
@@ -1528,7 +1553,7 @@ class MindmapManager {
     }
   }
   isAnswerNode (questionNode) {
-    if (questionNode.style.backgroundColor === PromptStyles.AnswerItem.backgroundColor || questionNode.style.backgroundColor === PromptStyles.AnswerItemPDFBased.backgroundColor || questionNode.style.backgroundColor === PromptStyles.AnswerItemAggregation.backgroundColor) {
+    if (questionNode.style.backgroundColor === 'rgb(150, 219, 11)' || questionNode.style.backgroundColor === 'rgb(43, 217, 217)' || questionNode.style.backgroundColor === 'rgb(0, 100, 0)') {
       return true
     } else {
       return false

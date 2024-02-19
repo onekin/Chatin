@@ -43,6 +43,7 @@
           <select class="form-control" id="LLMDropdown">
             <option value="anthropic" selected="selected">Anthropic (Claude-2)</option>
             <option value="openAI">OpenAI (GPT4-turbo)</option>
+            <option value="openAIBasic">OpenAI (GPT3.5)</option>
           </select>
         </div>
         <br>
@@ -52,9 +53,14 @@
           <button id="anthropic-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
         </div>
         <div id="openAI-ApiKeyContainer" class="APIKey-Configuration">
-          <label>Paste here your OpenAI API key:</label>
+          <label>Paste here your OpenAI API Plus key:</label>
           <input type="text" id="openAI-APIKey" />
           <button id="openAI-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
+        </div>
+        <div id="openAIBasic-ApiKeyContainer" class="APIKey-Configuration">
+          <label>Paste here your OpenAI basic API key:</label>
+          <input type="text" id="openAIBasic-APIKey" />
+          <button id="openAIBasic-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
         </div>
       </div >
     </div>
