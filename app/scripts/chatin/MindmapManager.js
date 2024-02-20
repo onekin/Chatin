@@ -16,6 +16,7 @@ const PromptStyles = require('./PromptStyles')
 const IconsMap = require('./IconsMap')
 const Utils = require('../utils/Utils')
 const Locators = require('../mindmeister/wrapper/Locators')
+const ITEMS = '4'
 // const pdfjsLib = require('pdfjs-dist/webpack.mjs')
 
 class MindmapManager {
@@ -289,7 +290,8 @@ class MindmapManager {
               that.parseMap().then(() => {
                 let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
                 let narrative = that.getNarrative(that, questionNodeObject)
-                that.performNarrativeQuestion(questionNode, narrative)
+                let lastNode = that.getLastNodeOfNarrative(that, questionNodeObject)
+                that.performNarrativeQuestion(questionNode, narrative, lastNode)
               })
             })
           }
@@ -1004,7 +1006,7 @@ class MindmapManager {
       Alerts.showErrorToast('Error parsing map: ' + error.message)
     })
   }
-  performNarrativeQuestion (node, narrative) {
+  performNarrativeQuestion (node, narrative, lastNode) {
     Alerts.showLoadingWindow(`Creating prompt...`)
     let that = this
     let variables = that._variables
@@ -1024,14 +1026,23 @@ class MindmapManager {
               Alerts.showLoadingWindow(`Creating mind map node...`)
               // GPT Answers
               let nodes = []
+
               let RQAnswer =
                 {
-                  text: json.narrative,
-                  parentId: node.getAttribute('data-id')
+                  text: narrative.question,
+                  note: json.narrative,
+                  parentId: lastNode._info.parent
                 }
               nodes.push(RQAnswer)
-              MindmeisterClient.addNode(that._mapId, nodes).then(() => {
+              // let nodesToRemove = that.getNodesToRemove(lastNode)
+              // let questionNodeID = that.getCurrentNodeId()
+              let removeNodes = []
+              removeNodes.push({ id: lastNode._info.id })
+              MindmeisterClient.removeNodes(that._mapId, removeNodes).then(() => {
                 Alerts.closeLoadingWindow()
+                MindmeisterClient.addNode(that._mapId, nodes).then(() => {
+                  Alerts.closeLoadingWindow()
+                })
               })
             }
             Alerts.showNarrative({
@@ -1320,7 +1331,7 @@ class MindmapManager {
   }
   parseStyle () {
     this._styles = []
-    let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.QUESTION_MODEL)
+    /* let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.QUESTION_MODEL)
     if (questionModelNodes == null || questionModelNodes.length === 0) return // todo
     let questionModelNode = questionModelNodes[0]
     let stylesNodes = questionModelNode.getChildrenWithText(TemplateNodes.STYLE)
@@ -1334,7 +1345,10 @@ class MindmapManager {
       if (styleChildren == null || styleChildren.length === 0) return
       let firstChild = styleChildren[0]
       styles.push({name: styleName, value: firstChild.text})
-    })
+    }) */
+    let styles = []
+    styles.push({name: 'Number of items', value: ITEMS})
+    styles.push({name: 'Description', value: 'provide rationales'})
     this._styles = styles
   }
 
@@ -1543,6 +1557,9 @@ class MindmapManager {
     }
     return targetElement
   }
+  getNodesToRemove (lastNode) {
+    console.log(lastNode)
+  }
   isQuestionNode (questionNode) {
     let questionRegExp = /^(WHICH|HOW|WHY).+\?$/i
     let question = questionNode.innerText.replaceAll('\n', ' ')
@@ -1627,6 +1644,17 @@ class MindmapManager {
       firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
     }
     return narrative
+  }
+  getLastNodeOfNarrative (that, questionNode) {
+    let firstChild = that._mindmapParser.getNodeById(questionNode._info.parent)
+    let secondChild
+    let thirdChild
+    while (firstChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
+      secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
+      thirdChild = firstChild
+      firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
+    }
+    return thirdChild
   }
   getQuestionPurpose (question) {
     let problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
