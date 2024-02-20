@@ -10,14 +10,13 @@ const Alerts = require('../utils/Alerts')
 const MindmapContentParser = require('../mindmeister/wrapper/MindmapContentParser')
 const ProcessQuestions = require('./ProcessQuestions')
 const Consequence = require('./model/Consequence')
-const Intervention = require('./model/Intervention')
+const PromptBuilder = require('./PromptBuilder')
 const Problem = require('./model/Problem')
 const PromptStyles = require('./PromptStyles')
 const IconsMap = require('./IconsMap')
 const Utils = require('../utils/Utils')
 const Locators = require('../mindmeister/wrapper/Locators')
 const ITEMS = '4'
-// const pdfjsLib = require('pdfjs-dist/webpack.mjs')
 
 class MindmapManager {
   constructor () {
@@ -362,6 +361,21 @@ class MindmapManager {
                 console.log('click on Consensus')
               })
             })
+            let narrativeButton = div.cloneNode(true)
+            // Optionally, you can change the content or attributes of the duplicate
+            narrativeButton.textContent = 'Narrative' // Changing the text content to 'Aggregate'
+            narrativeButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
+            // Insert the duplicate after the original div
+            div.parentNode.insertBefore(narrativeButton, div.nextSibling)
+            narrativeButton.addEventListener('click', function (event) {
+              console.log('click on Narrative')
+              that.parseMap().then(() => {
+                let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+                let narrative = that.getNarrativeForAnswerNode(that, questionNodeObject)
+                let lastNode = that.getLastNodeOfNarrativeForAnswerNode(that, questionNodeObject)
+                that.performNarrativeQuestion(questionNode, narrative, lastNode)
+              })
+            })
           }
         }
       }
@@ -411,394 +425,6 @@ class MindmapManager {
   }
 
   /**
-   * Management of prompt development
-   */
-  // PROMPTS FOR GPT BASED QUESTION
-  getPromptForGPTNodes (question) {
-    let that = this
-    let style = that._styles
-    let numberOfItems, description
-    let numberOfItemsElement = style.find((s) => { return s.name === 'Number of items' })
-    let descriptionElement = style.find((s) => { return s.name === 'Description' })
-    if (ModelDefaultValues.Description.initial === descriptionElement.value) {
-      description = ModelDefaultValues.Description.default
-    } else {
-      description = descriptionElement.value
-    }
-    if (ModelDefaultValues.NumberOfItems.initial === numberOfItemsElement.value) {
-      numberOfItems = ModelDefaultValues.NumberOfItems.default
-    } else {
-      numberOfItems = numberOfItemsElement.value
-    }
-    let prompt
-    const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
-    const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
-    if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
-      prompt = that.getPromptForGPTProblemNodes(question, numberOfItems, description)
-    }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
-    if (relevancePromptRE.test(question)) {
-      prompt = that.getPromptForGPTRelevanceNodes(question, numberOfItems, description)
-    }
-    return prompt
-  }
-  getPromptForGPTProblemNodes (question, numberOfItems, description) {
-    let prompt = question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
-    prompt += '{\n' + '"problem": ['
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_problem_name":"name for the problem",' +
-          '"description": "description of the problem that ' + description + '",' +
-          '}'
-      } else {
-        prompt += ',{"GPT_problem_name":"name for the problem",' +
-          '"description": "description of the problem that ' + description + '",' +
-          '}'
-      }
-    }
-    prompt += ',\n]\n' + '}'
-    return prompt
-  }
-  getPromptForGPTRelevanceNodes (question, numberOfItems, description) {
-    let prompt = question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
-    prompt += '{\n' + '"relevance": ['
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_relevance_name":"relevance name",' +
-          '"description": "description of the relevance reason that ' + description + '",' +
-          '}'
-      } else {
-        prompt += ',{"GPT_relevance_name":"relevance name",' +
-          '"description": "description of the relevance reason that ' + description + '",' +
-          '}'
-      }
-    }
-    prompt += '\n]\n' + '}'
-    return prompt
-  }
-  // PROMPTS FOR GPT BASED QUESTION FOR ALTERNATIVE NODES
-  getPromptForGPTAlternativeNodes (question, chatGPTBasedAnswers) {
-    let that = this
-    let style = that._styles
-    let numberOfItems, description
-    let numberOfItemsElement = style.find((s) => { return s.name === 'Number of items' })
-    let descriptionElement = style.find((s) => { return s.name === 'Description' })
-    if (ModelDefaultValues.Description.initial === descriptionElement.value) {
-      description = ModelDefaultValues.Description.default
-    } else {
-      description = descriptionElement.value
-    }
-    if (ModelDefaultValues.NumberOfItems.initial === numberOfItemsElement.value) {
-      numberOfItems = ModelDefaultValues.NumberOfItems.default
-    } else {
-      numberOfItems = numberOfItemsElement.value
-    }
-    let prompt
-    const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
-    const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
-    if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
-      prompt = that.getPromptForGPTAlternativeProblemNodes(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
-    if (relevancePromptRE.test(question)) {
-      prompt = that.getPromptForGPTAlternativeRelevanceNodes(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    const solutionPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
-    const feasabilityPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
-    const effectivenessPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
-    if (solutionPromptRE.test(question) || feasabilityPromptRE.test(question) || effectivenessPromptRE.test(question)) {
-      prompt = that.getPromptForGPTAlternativeSolutionNodes(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    return prompt
-  }
-  getPromptForGPTAlternativeProblemNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = ''
-    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
-          '}'
-      } else {
-        prompt += ',{"GPT_problem_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
-          '}\n'
-      }
-    }
-    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items for the previous examples with descriptions that ' + description + '\n'
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
-    prompt += '{\n' + '"problem": [\n'
-
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_problem_name":"name for the problem",\n' +
-          '"description": "description of the problem",\n' +
-          '}'
-      } else {
-        prompt += ',{"GPT_problem_name":"name for the problem",\n' +
-          '"description": "description of the problem",\n' +
-          '}\n'
-      }
-    }
-    prompt += ',\n]\n' + '}\n'
-    return prompt
-  }
-  getPromptForGPTAlternativeRelevanceNodes (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = ''
-    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
-          '}\n'
-      } else {
-        prompt += ',{"GPT_relevance_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
-          '}\n'
-      }
-    }
-    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description + '\n'
-    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
-    prompt += '{\n' + '"relevance": [\n'
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"GPT_relevance_name":"relevance name",\n' +
-          '"description": "description of the relevance reason",\n' +
-          '}\n'
-      } else {
-        prompt += ',{"GPT_relevance_name":"relevance name",\n' +
-          '"description": "description of the relevance reason",\n' +
-          '}\n'
-      }
-    }
-    prompt += '\n]\n' + '}\n'
-    return prompt
-  }
-  // PROMPTS FOR PDF BASED QUESTION
-  getPromptForPDFBasedQuestion (question, chatGPTBasedAnswers) {
-    let that = this
-    let style = that._styles
-    let numberOfItems, description
-    let numberOfItemsElement = style.find((s) => { return s.name === 'Number of items' })
-    let descriptionElement = style.find((s) => { return s.name === 'Description' })
-    if (ModelDefaultValues.Description.initial === descriptionElement.value) {
-      description = ModelDefaultValues.Description.default
-    } else {
-      description = descriptionElement.value
-    }
-    if (ModelDefaultValues.NumberOfItems.initial === numberOfItemsElement.value) {
-      numberOfItems = ModelDefaultValues.NumberOfItems.default
-    } else {
-      numberOfItems = numberOfItemsElement.value
-    }
-    let prompt
-    const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
-    const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
-    if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
-      prompt = that.getPDFBasedProblemPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
-    if (relevancePromptRE.test(question)) {
-      prompt = that.getPDFBasedRelevancePrompt(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    return prompt
-  }
-  getPDFBasedProblemPrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description + ',\n'
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:\n'
-    prompt += '{\n' + '"problem": [\n'
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"problem_name":"name for the problem",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
-          '"description": "description of the problem",\n' +
-          '}'
-      } else {
-        prompt += ',{"problem_name":"name for the problem",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
-          '"description": "description of the problem",\n' +
-          '}\n'
-      }
-    }
-    if (chatGPTBasedAnswers) {
-      for (let i = 0; i < numberOfItems; i++) {
-        if (i === 0) {
-          prompt += '{"GPT_problem_name":"name for the problem",\n' +
-            '"description": "description of the problem",\n' +
-            '}'
-        } else {
-          prompt += ',{"GPT_problem_name":"name for the problem",\n' +
-            '"description": "description of the problem",\n' +
-            '}\n'
-        }
-      }
-    }
-    prompt += ',\n]\n' + '}\n'
-    return prompt
-  }
-  getPDFBasedRelevancePrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
-    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description + '\n'
-    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:\n'
-    prompt += '{\n' + '"relevance": [\n'
-    for (let i = 0; i < numberOfItems; i++) {
-      if (i === 0) {
-        prompt += '{"relevance_name":"relevance name",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
-          '"description": "description of the relevance reason",\n' +
-          '}'
-      } else {
-        prompt += ',{"relevance_name":"relevance name",\n' +
-          '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
-          '"description": "description of the relevance reason",\n' +
-          '}'
-      }
-    }
-    if (chatGPTBasedAnswers) {
-      for (let i = 0; i < numberOfItems; i++) {
-        if (i === 0) {
-          prompt += '{"GPT_relevance_name":"relevance name",\n' +
-            '"description": "description of the relevance reason",\n' +
-            '}\n'
-        } else {
-          prompt += ',{"GPT_relevance_name":"relevance name",\n' +
-            '"description": "description of the relevance reason",\n' +
-            '}\n'
-        }
-      }
-    }
-    prompt += '\n]\n' + '}\n'
-    return prompt
-  }
-  // PROMPTS FOR AGGREGATION QUESTION
-  getPromptForAggregation (question, nodes, number) {
-    // let that = this
-    let prompt = 'QUESTION=[ ' + question + ']\n'
-    for (let i = 0; i < nodes.length; i++) {
-      if (i === 0) {
-        prompt += 'ANSWERS= {\n' +
-          'node_name":' + nodes[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + nodes[i]._info.note.trim().replaceAll('\n', ' ') + ',\n' +
-          '}'
-      } else {
-        prompt += ',{\n' +
-          '"node_name":' + nodes[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + nodes[i]._info.note.trim().replaceAll('\n', ' ') + ',\n' +
-          '}\n'
-      }
-    }
-    prompt += 'Summarization. I want you to behave as an academic. I have provided a QUESTION above and then a set of answers with descriptions in a JSON. Answers might not be fully alternative but some nuisance might exists among them. I want you to cluster the set of answers in ' + number + ' clusters that encloses those answers that are semantically closer.' + '\n'
-    prompt += ' You have to provide the response in JSON format including each clustered item in an array. The format should be as follows:\n'
-    prompt += '{\n' + '"clusters": [\n'
-    for (let i = 0; i < number; i++) {
-      if (i === 0) {
-        prompt += '{\n' +
-          '"cluster_name":"cluster_name",\n' +
-          '"description": "description of the cluster",\n' +
-          '"clusteredItems": [a list of items with two keys as in the above answers, node_name and description of the node_name as it is in the above example]\n' +
-          '}\n'
-      } else {
-        prompt += ',{\n' +
-          '"cluster_name":"cluster_name",\n' +
-          '"description": "description of the cluster",\n' +
-          '"clusteredItems": [a list of items with two keys as in the above answers, node_name and description of the node_name as it is in the above example]\n' +
-          '}\n'
-      }
-    }
-    prompt += ',\n]\n' + '}\n'
-    return prompt
-  }
-  getPromptForNarrative (question, narrative, variables) {
-    // let that = this
-    let practice = variables.find((v) => { return v.name === 'Practice' }).value
-    let activity = variables.find((v) => { return v.name === 'Activity' }).value
-    let prompt = 'I want you to behave as an academic. Next I will provide you with a RESEARCH QUESTION and a set of text chunks that provide the CONTEXT where the Research Question aroses. I want you to provide a coherent narrative that ends up in the question Research Question\n'
-    prompt += 'RESEARCH QUESTION=[ ' + narrative.question + ']\n'
-    if (narrative.problem) {
-      let problems = narrative.problem.split(';')
-      problems.pop()
-      let currentProblem = problems.pop().split(':')
-      prompt += 'CONTEXT=[ One of the problems that arise during  ' + activity + ' in ' + practice + ' is  ' + currentProblem[0] + ', which means that ' + currentProblem[1] + '.\n'
-      while (problems.length > 0) {
-        let followingProblem = problems.pop().split(':')
-        prompt += currentProblem[0] + ' occurs because ' + followingProblem[0] + ', which means that ' + followingProblem[1] + '\n'
-        currentProblem = followingProblem
-      }
-    }
-    if (narrative.relevance) {
-      let relevances = narrative.relevance.split(';')
-      relevances.pop()
-      let currentRelevance = relevances.pop().split(':')
-      prompt += 'This problem is relevant because ' + currentRelevance[0] + ' which means that ' + currentRelevance[1] + '.\n'
-      while (relevances.length > 0) {
-        currentRelevance = relevances.pop().split(':')
-        prompt += 'It is also relevant because ' + currentRelevance[0] + ', which means that ' + currentRelevance[1] + '\n'
-      }
-    }
-    if (narrative.solution) {
-      let solution = narrative.solution.split(':')
-      prompt += 'This problem can be addressed by  ' + solution[0] + ' which means that ' + solution[1] + '.\n'
-    }
-    if (narrative.feasability) {
-      let feasabilities = narrative.feasability.split(';')
-      feasabilities.pop()
-      let currentFeasability = feasabilities.pop().split(':')
-      prompt += 'This solution can be implemented by ' + currentFeasability[0] + ' which means that ' + currentFeasability[1] + '.\n'
-      while (feasabilities.length > 0) {
-        currentFeasability = feasabilities.pop().split(':')
-        prompt += 'It can also be implemented by ' + currentFeasability[0] + ', which means that ' + currentFeasability[1] + '\n'
-      }
-    }
-    if (narrative.effectiveness) {
-      let effectivenesses = narrative.effectiveness.split(';')
-      effectivenesses.pop()
-      let currentEffectiveness = effectivenesses.pop().split(':')
-      prompt += 'This solution can help to ' + currentEffectiveness[0] + ' because ' + currentEffectiveness[1] + '.\n'
-      while (effectivenesses.length > 0) {
-        currentEffectiveness = effectivenesses.pop().split(':')
-        prompt += 'This can also help to ' + currentEffectiveness[0] + ', because ' + currentEffectiveness[1] + '\n'
-      }
-    }
-    prompt += 'Please, provide a narrative that ends up in the Research Question. You have to provide the response in JSON format including the narrative in a "answer" item. The format should be as follows:\n]'
-    prompt += '{\n' + '"narrative": "The narrative of the research question"\n' + '}\n'
-    return prompt
-  }
-
-  getPromptForNarrativeLines (question, narrative, variables) {
-    // let that = this
-    let numberOfLines = 0
-    let practice = variables.find((v) => { return v.name === 'Practice' }).value
-    let activity = variables.find((v) => { return v.name === 'Activity' }).value
-    let prompt = 'I want you to behave as an academic. Next I will provide you with a RESEARCH QUESTION and a set of text chunks that provide the CONTEXT where the Research Question aroses. I want you to provide a coherent narrative that ends up in the question Research Question\n'
-    prompt += 'RESEARCH QUESTION=[ ' + narrative.question + ']\n'
-    if (narrative.problem) {
-      let problems = narrative.problem.split(';')
-      problems.pop()
-      let currentProblem = problems.pop().split(':')
-      numberOfLines += 2
-      prompt += 'CONTEXT=[ One of the problems that arise during  ' + activity + ' in ' + practice + ' is  ' + currentProblem[0] + ', which means that ' + currentProblem[1] + '.\n'
-      while (problems.length > 0) {
-        let followingProblem = problems.pop().split(':')
-        numberOfLines += 2
-        prompt += currentProblem[0] + ' occurs because ' + followingProblem[0] + ', which means that ' + followingProblem[1] + '\n'
-        currentProblem = followingProblem
-      }
-    }
-    if (narrative.relevance) {
-      let relevances = narrative.relevance.split(';')
-      relevances.pop()
-      let currentRelevance = relevances.pop().split(':')
-      numberOfLines += 2
-      prompt += 'This problem is relevant because ' + currentRelevance[0] + ' which means that ' + currentRelevance[1] + '.\n'
-      while (relevances.length > 0) {
-        currentRelevance = relevances.pop().split(':')
-        prompt += 'It is also relevant because ' + currentRelevance[0] + ', which means that ' + currentRelevance[1] + '\n'
-      }
-    }
-    prompt += 'Please, provide a narrative that ends up in the Research Question. You have to provide the response in JSON format including the narrative in a "answer" item. The format should be as follows:\n]'
-    prompt += '{\n' + '"narrative": "The narrative of the research question in ' + numberOfLines + ' lines "\n' + '}\n'
-    return prompt
-  }
-  /**
    * Perform questions
    */
   performQuestion (node) {
@@ -809,9 +435,9 @@ class MindmapManager {
       let gptBasedNodes = questionNode.children.filter((c) => { return c._info.style === 'FFFFFF,100,0,0,2BD9D9,1,' })
       let prompt
       if (gptBasedNodes.length > 0) {
-        prompt = that.getPromptForGPTAlternativeNodes(node.text, gptBasedNodes)
+        prompt = PromptBuilder.getPromptForGPTAlternativeNodes(this, node.text, gptBasedNodes)
       } else {
-        prompt = that.getPromptForGPTNodes(node.text)
+        prompt = PromptBuilder.getPromptForGPTNodes(this, node.text)
       }
       let title = null
       let note = null
@@ -881,7 +507,7 @@ class MindmapManager {
     let that = this
     let chatGPTBasedAnswers = false
     this.parseMap().then(() => {
-      let prompt = that.getPromptForPDFBasedQuestion(node.text, chatGPTBasedAnswers)
+      let prompt = PromptBuilder.getPromptForPDFBasedQuestion(this, node.text, chatGPTBasedAnswers)
       let title = null
       let note = null
       let questionNode = that._mindmapParser.getNodeById(node.id)
@@ -1011,7 +637,7 @@ class MindmapManager {
     let that = this
     let variables = that._variables
     console.log('narrative', narrative)
-    let prompt = that.getPromptForNarrativeLines(node, narrative, variables)
+    let prompt = PromptBuilder.getPromptForNarrativeLines(node, narrative, variables)
     console.log(prompt)
     chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
       if (llm === '') {
@@ -1026,7 +652,6 @@ class MindmapManager {
               Alerts.showLoadingWindow(`Creating mind map node...`)
               // GPT Answers
               let nodes = []
-
               let RQAnswer =
                 {
                   text: narrative.question,
@@ -1399,44 +1024,6 @@ class MindmapManager {
         c.children.forEach((p) => {
           let cons = new Consequence(p.text, p.id, problem)
           problem.addConsequence(cons)
-          that.parseConsequence(cons)
-        })
-      }
-    })
-  }
-  parseConsequence (consequence) {
-    let that = this
-    let node = this._mindmapParser.getNodeById(consequence.nodeId)
-    if (node == null) return
-    let consequenceNodeChildren = node.children
-    let interventionsPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_ANALYSIS)
-    consequenceNodeChildren.forEach((c) => {
-      if (interventionsPromptRE.test(c.text)) {
-        c.children.forEach((p) => {
-          let int = new Intervention(p.text, p.id, consequence)
-          consequence.addIntervention(int)
-          that.parseIntervention(int)
-        })
-      }
-    })
-  }
-  parseIntervention (intervention) {
-    let node = this._mindmapParser.getNodeById(intervention.nodeId)
-    if (node == null) return
-    let interventionNodeChildren = node.children
-    let feasibilityReasonsPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_FEASIBILITY)
-    interventionNodeChildren.forEach((c) => {
-      if (feasibilityReasonsPromptRE.test(c.text)) {
-        c.children.forEach((p) => {
-          intervention.addFeasibilityReason(p.text)
-        })
-      }
-    })
-    let effectivenessReasonsPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.SOLUTION_EFFECTIVENESS)
-    interventionNodeChildren.forEach((c) => {
-      if (effectivenessReasonsPromptRE.test(c.text)) {
-        c.children.forEach((p) => {
-          intervention.addEffectivenessReason(p.text)
         })
       }
     })
@@ -1557,9 +1144,6 @@ class MindmapManager {
     }
     return targetElement
   }
-  getNodesToRemove (lastNode) {
-    console.log(lastNode)
-  }
   isQuestionNode (questionNode) {
     let questionRegExp = /^(WHICH|HOW|WHY).+\?$/i
     let question = questionNode.innerText.replaceAll('\n', ' ')
@@ -1646,7 +1230,47 @@ class MindmapManager {
     return narrative
   }
   getLastNodeOfNarrative (that, questionNode) {
-    let firstChild = that._mindmapParser.getNodeById(questionNode._info.parent)
+    let firstChild = that._mindmapParser.getNodeById(questionNode._info.id)
+    let secondChild
+    let thirdChild
+    while (firstChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
+      thirdChild = secondChild
+      secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
+      if (secondChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
+        firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
+      } else {
+        return thirdChild
+      }
+    }
+    return thirdChild
+  }
+  getNarrativeForAnswerNode (that, questionNode) {
+    let problem = questionNode._info.title.replaceAll('\n', ' ')
+    let variables = that._variables
+    let practice = variables.find((v) => { return v.name === 'Practice' }).value
+    let activity = variables.find((v) => { return v.name === 'Activity' }).value
+    let question = 'How can ' + problem + ' be lessen during ' + activity + ' in ' + practice + '?'
+    let narrative = { question: question, problem: '', relevance: '' }
+    let RQPurpose = that.getQuestionPurpose(question)
+    let parent = that._mindmapParser.getNodeById(questionNode._info.parent)
+    let firstChild = that._mindmapParser.getNodeById(parent._info.parent)
+    while (firstChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
+      if (that.hasQuestionType(firstChild, 'WHICH CONSEQUENCES') && RQPurpose !== 'relevance') {
+        narrative.relevance = that.getQuestionTypeAnswers(firstChild, 'WHICH CONSEQUENCES')
+      }
+      let secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
+      if (that.isQuestionType(secondChild, 'WHICH PROBLEMS')) {
+        narrative.problem += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + firstChild._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
+      } else if (that.isQuestionType(secondChild, 'WHY DOES')) {
+        narrative.problem += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + firstChild._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
+      }
+      firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
+    }
+    return narrative
+  }
+  getLastNodeOfNarrativeForAnswerNode (that, questionNode) {
+    let parentNode = that._mindmapParser.getNodeById(questionNode._info.parent)
+    let firstChild = that._mindmapParser.getNodeById(parentNode._info.parent)
     let secondChild
     let thirdChild
     while (firstChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
