@@ -17,6 +17,7 @@ const IconsMap = require('./IconsMap')
 const Utils = require('../utils/Utils')
 const Locators = require('../mindmeister/wrapper/Locators')
 const ITEMS = '4'
+const _ = require('lodash')
 
 class MindmapManager {
   constructor () {
@@ -209,11 +210,21 @@ class MindmapManager {
       let scopingAnalysisNode = scopingAnalysisNodes[0]
       let question = ProcessQuestions.PROBLEM_STATEMENT
       let items = MindmapManager.extractQuestionItems(question)
+      let variables = that._variables
       items.forEach((i) => {
-        let v = that._variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
+        let v = variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
+        _.remove(variables, v)
         if (v == null) return
         question = question.replace(`<${i}>`, v.value)
       })
+      if (variables.length > 0) {
+        console.log('Missing variables: ' + variables.map((v) => { return v.name }))
+        question = question.replace('?', ' ')
+        variables.forEach((v) => {
+          question = question + ' and assuming that ' + v.value + ' is ' + v.name
+        })
+        question = question + '?'
+      }
       let missingItems = MindmapManager.extractQuestionItems(question)
       if (missingItems.length > 0) {
         Alerts.showErrorToast(`Missing variables: ${missingItems}`)
@@ -701,7 +712,7 @@ class MindmapManager {
         } else {
           console.log('performAggregationQuestion')
           if (childrenNodes.length > 0) {
-            prompt = that.getPromptForAggregation(node.text, childrenNodes, number)
+            prompt = PromptBuilder.getPromptForAggregation(node.text, childrenNodes, number)
             console.log('prompt: ' + prompt)
             chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
               if (llm === '') {
@@ -877,11 +888,23 @@ class MindmapManager {
     let question = ProcessQuestions.PROBLEM_ANALYSIS
     question = question.replace('<problem>', issue.text)
     let items = MindmapManager.extractQuestionItems(question)
+    let variables = this._variables
     items.forEach((i) => {
-      let v = this._variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
+      let v = variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
+      _.remove(variables, v)
       if (v == null) return
       question = question.replace(`<${i}>`, v.value)
     })
+    if (variables.length > 0) {
+      console.log('Missing variables: ' + variables.map((v) => { return v.name }))
+      question = question.replace('?', '')
+      variables.forEach((v) => {
+        if (v.value && v.name) {
+          question = question + ' and assuming that ' + v.name + ' is ' + v.value
+        }
+      })
+      question = question + '?'
+    }
     let missingItems = MindmapManager.extractQuestionItems(question)
     if (missingItems.length > 0) {
       Alerts.showErrorToast(`Missing variables: ${missingItems}`)
@@ -903,11 +926,21 @@ class MindmapManager {
     let question = ProcessQuestions.CONSEQUENCE_MAPPING
     question = question.replace('<problem>', issue.text)
     let items = MindmapManager.extractQuestionItems(question)
+    let variables = this._variables
     items.forEach((i) => {
-      let v = this._variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
+      let v = variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
+      _.remove(variables, v)
       if (v == null) return
       question = question.replace(`<${i}>`, v.value)
     })
+    if (variables.length > 0) {
+      console.log('Missing variables: ' + variables.map((v) => { return v.name }))
+      question = question.replace('?', ' ')
+      variables.forEach((v) => {
+        question = question + ' and assuming that ' + v.value + ' is ' + v.name
+      })
+      question = question + '?'
+    }
     let missingItems = MindmapManager.extractQuestionItems(question)
     if (missingItems.length > 0) {
       Alerts.showErrorToast(`Missing variables: ${missingItems}`)

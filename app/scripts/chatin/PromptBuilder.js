@@ -1,6 +1,5 @@
 const ModelDefaultValues = require('./ModelDefaultValues')
 const ProcessQuestions = require('./ProcessQuestions')
-const MindmapManager = require('./MindmapManager')
 
 class PromptBuilder {
   static getPromptForGPTNodes (that, question) {
@@ -84,6 +83,7 @@ class PromptBuilder {
       numberOfItems = numberOfItemsElement.value
     }
     let prompt
+    const MindmapManager = require('./MindmapManager')
     const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
@@ -173,14 +173,15 @@ class PromptBuilder {
       numberOfItems = numberOfItemsElement.value
     }
     let prompt
+    const MindmapManager = require('./MindmapManager')
     const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
-      prompt = that.getPDFBasedProblemPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
+      prompt = PromptBuilder.getPDFBasedProblemPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
     }
     const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (relevancePromptRE.test(question)) {
-      prompt = that.getPDFBasedRelevancePrompt(question, numberOfItems, description, chatGPTBasedAnswers)
+      prompt = PromptBuilder.getPDFBasedRelevancePrompt(question, numberOfItems, description, chatGPTBasedAnswers)
     }
     return prompt
   }
