@@ -1,11 +1,3 @@
-/* import ChromeStorage from '../utils/ChromeStorage'
-import { loadQAStuffChain } from 'langchain/chains'
-import { ChatOpenAI } from 'langchain/chat_models/openai'
-import { ChatAnthropic } from 'langchain/chat_models/anthropic'
-import { TokenTextSplitter } from 'langchain/text_splitter'
-import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
-import { MemoryVectorStore } from 'langchain/vectorstores/memory' */
-// const ChromeStorage = require('../utils/ChromeStorage'); // Uncomment if ChromeStorage is needed.
 const { loadQAStuffChain } = require('langchain/chains')
 const { ChatOpenAI } = require('langchain/chat_models/openai')
 const { ChatAnthropic } = require('langchain/chat_models/anthropic')

@@ -15,8 +15,7 @@
       "19": "images/icon-19.png",
       "38": "images/icon-38.png"
     },
-    "default_title": "__MSG_browserActionTitle__",
-    "default_popup": "pages/options.html"
+    "default_title": "__MSG_browserActionTitle__"
   },
   "background": {
     "service_worker": "scripts/background.js"

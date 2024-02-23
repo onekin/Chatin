@@ -96,7 +96,8 @@ function showSelectedLLMConfiguration (selectedLLM) {
       button.innerHTML = 'Change API Key value'
     } else {
       console.log('No retrieved API Key')
-      document.querySelector('#' + selectedLLM + '-APIKey').value = 'No API KEY'
+      document.querySelector('#' + selectedLLM + '-APIKey').value = ''
+      document.querySelector('#' + selectedLLM + '-APIKey').placeholder = 'No API Key stored'
     }
   })
   if (_.isElement(selectedLLMConfiguration)) {

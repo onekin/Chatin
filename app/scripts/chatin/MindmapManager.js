@@ -221,7 +221,7 @@ class MindmapManager {
         console.log('Missing variables: ' + variables.map((v) => { return v.name }))
         question = question.replace('?', ' ')
         variables.forEach((v) => {
-          question = question + ' and assuming that ' + v.value + ' is ' + v.name
+          question = question + ' and assuming that ' + v.name + ' is ' + v.value
         })
         question = question + '?'
       }
@@ -342,7 +342,7 @@ class MindmapManager {
             console.log('click on Consensus')
             that.parseMap().then(() => {
               let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
-              const nodeText = questionNodeObject._info.title
+              const nodeText = questionNodeObject._info.title.replaceAll('\n', ' ')
               const encodedUri = encodeURIComponent(nodeText)
               const uri = 'https://consensus.app/results/?q=' + encodedUri
               window.open(uri)
@@ -365,7 +365,7 @@ class MindmapManager {
                 let activity = variables.find((v) => { return v.name === 'Activity' }).value
                 let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
                 const nodeText = questionNodeObject._info.title
-                const question = 'How can ' + nodeText + ' be lessen in ' + practice + ' to ' + activity + '?'
+                const question = 'How can ' + nodeText + ' be lessened in ' + practice + ' to ' + activity + '?'
                 const encodedUri = encodeURIComponent(question)
                 const uri = 'https://consensus.app/results/?q=' + encodedUri
                 window.open(uri)
@@ -463,7 +463,7 @@ class MindmapManager {
       console.log('prompt:\n ' + prompt)
       chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
         if (llm === '') {
-          llm = Config.defaultLLM
+          llm = Config.default.defaultLLM
         }
         Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
         chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
@@ -557,7 +557,7 @@ class MindmapManager {
               documents = await LLMTextUtils.loadDocument(pdfDocument)
               chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
                 if (llm === '') {
-                  llm = Config.defaultLLM
+                  llm = Config.default.defaultLLM
                 }
                 Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
                 chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
@@ -652,7 +652,7 @@ class MindmapManager {
     console.log(prompt)
     chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
       if (llm === '') {
-        llm = Config.defaultLLM
+        llm = Config.default.defaultLLM
       }
       chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
         if (apiKey !== null && apiKey !== '') {
@@ -716,7 +716,7 @@ class MindmapManager {
             console.log('prompt: ' + prompt)
             chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
               if (llm === '') {
-                llm = Config.defaultLLM
+                llm = Config.default.defaultLLM
               }
               Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
               chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
@@ -937,7 +937,7 @@ class MindmapManager {
       console.log('Missing variables: ' + variables.map((v) => { return v.name }))
       question = question.replace('?', ' ')
       variables.forEach((v) => {
-        question = question + ' and assuming that ' + v.value + ' is ' + v.name
+        question = question + ' and assuming that ' + v.name + ' is ' + v.value
       })
       question = question + '?'
     }
@@ -1282,7 +1282,7 @@ class MindmapManager {
     let variables = that._variables
     let practice = variables.find((v) => { return v.name === 'Practice' }).value
     let activity = variables.find((v) => { return v.name === 'Activity' }).value
-    let question = 'How can ' + problem + ' be lessen during ' + activity + ' in ' + practice + '?'
+    let question = 'How can ' + problem + ' be lessened during ' + activity + ' in ' + practice + '?'
     let narrative = { question: question, problem: '', relevance: '' }
     let RQPurpose = that.getQuestionPurpose(question)
     let parent = that._mindmapParser.getNodeById(questionNode._info.parent)
