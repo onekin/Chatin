@@ -21,12 +21,13 @@ class PromptBuilder {
     const MindmapManager = require('./MindmapManager')
     const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
       prompt = PromptBuilder.getPromptForGPTProblemNodes(question, numberOfItems, description)
-    }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
-    if (relevancePromptRE.test(question)) {
+    } else if (relevancePromptRE.test(question)) {
       prompt = PromptBuilder.getPromptForGPTRelevanceNodes(question, numberOfItems, description)
+    } else {
+      prompt = PromptBuilder.getPromptForGPTOpenQuestion(question, numberOfItems, description)
     }
     return prompt
   }
@@ -66,6 +67,24 @@ class PromptBuilder {
     prompt += '\n]\n' + '}'
     return prompt
   }
+  static getPromptForGPTOpenQuestion (question, numberOfItems, description) {
+    let prompt = question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:'
+    prompt += '{\n' + '"items": ['
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_item_name":"item name",' +
+          '"description": "description of the item reason that ' + description + '",' +
+          '}'
+      } else {
+        prompt += ',{"GPT_item_name":"item name",' +
+          '"description": "description of the item reason that ' + description + '",' +
+          '}'
+      }
+    }
+    prompt += '\n]\n' + '}'
+    return prompt
+  }
   // PROMPTS FOR GPT BASED QUESTION FOR ALTERNATIVE NODES
   static getPromptForGPTAlternativeNodes (that, question, chatGPTBasedAnswers) {
     let style = that._styles
@@ -86,12 +105,13 @@ class PromptBuilder {
     const MindmapManager = require('./MindmapManager')
     const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
       prompt = PromptBuilder.getPromptForGPTAlternativeProblemNodes(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
-    if (relevancePromptRE.test(question)) {
+    } else if (relevancePromptRE.test(question)) {
       prompt = PromptBuilder.getPromptForGPTAlternativeRelevanceNodes(question, numberOfItems, description, chatGPTBasedAnswers)
+    } else {
+      prompt = PromptBuilder.getPromptForGPTOpenQuestionWithAlternatives(question, numberOfItems, description)
     }
     return prompt
   }
@@ -156,6 +176,36 @@ class PromptBuilder {
     prompt += '\n]\n' + '}\n'
     return prompt
   }
+  static getPromptForGPTOpenQuestionWithAlternatives (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = ''
+    for (let i = 0; i < chatGPTBasedAnswers.length; i++) {
+      if (i === 0) {
+        prompt += '{"item_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}\n'
+      } else {
+        prompt += ',{"item_name":' + chatGPTBasedAnswers[i]._info.title.replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + chatGPTBasedAnswers[i]._info.note.split('EXCERPT FROM')[0].trim().replaceAll('\n', ' ') + ',\n' +
+          '}\n'
+      }
+    }
+    prompt += '\n' + question + 'Please provide ' + numberOfItems + ' alternative items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The format should be as follows:\n'
+    prompt += '{\n' + '"relevance": [\n'
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_item_name":"item name",\n' +
+          '"description": "description of the item reason",\n' +
+          '}\n'
+      } else {
+        prompt += ',{"GPT_item_name":"item name",\n' +
+          '"description": "description of the item reason",\n' +
+          '}\n'
+      }
+    }
+    prompt += '\n]\n' + '}\n'
+    return prompt
+  }
   // PROMPTS FOR PDF BASED QUESTION
   static getPromptForPDFBasedQuestion (that, question, chatGPTBasedAnswers) {
     let style = that._styles
@@ -176,12 +226,13 @@ class PromptBuilder {
     const MindmapManager = require('./MindmapManager')
     const problemStatementPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
+    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
     if (problemPromptRE.test(question) || problemStatementPromptRE.test(question)) {
       prompt = PromptBuilder.getPDFBasedProblemPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
-    }
-    const relevancePromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.CONSEQUENCE_MAPPING)
-    if (relevancePromptRE.test(question)) {
+    } else if (relevancePromptRE.test(question)) {
       prompt = PromptBuilder.getPDFBasedRelevancePrompt(question, numberOfItems, description, chatGPTBasedAnswers)
+    } else {
+      prompt = PromptBuilder.getPDFBasedOpenQuestionPrompt(question, numberOfItems, description, chatGPTBasedAnswers)
     }
     return prompt
   }
@@ -244,6 +295,39 @@ class PromptBuilder {
         } else {
           prompt += ',{"GPT_relevance_name":"relevance name",\n' +
             '"description": "description of the relevance reason",\n' +
+            '}\n'
+        }
+      }
+    }
+    prompt += '\n]\n' + '}\n'
+    return prompt
+  }
+  static getPDFBasedOpenQuestionPrompt (question, numberOfItems, description, chatGPTBasedAnswers) {
+    let prompt = 'Based on the provided pdf, ' + question + 'Please provide ' + numberOfItems + ' items with descriptions that ' + description + '\n'
+    prompt += ' You have to provide the response in JSON format including each item in an array. The JSON should list a text excerpt of the paper for each problem detected in the problem, associated with the problem. You also have to provide another ' + numberOfItems + ' alternatives by your own. The format should be as follows:\n'
+    prompt += '{\n' + '"items": [\n'
+    for (let i = 0; i < numberOfItems; i++) {
+      if (i === 0) {
+        prompt += '{"GPT_item_name":"item name",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the item]",\n' +
+          '"description": "description of the item reason",\n' +
+          '}'
+      } else {
+        prompt += '{"GPT_item_name":"item name",\n' +
+          '"excerpt": "[Excerpt from the provided text that justifies the item]",\n' +
+          '"description": "description of the item reason",\n' +
+          '}'
+      }
+    }
+    if (chatGPTBasedAnswers) {
+      for (let i = 0; i < numberOfItems; i++) {
+        if (i === 0) {
+          prompt += '{"GPT_item_name":"item name",\n' +
+            '"description": "description of the item reason",\n' +
+            '}\n'
+        } else {
+          prompt += '{"GPT_item_name":"item name",\n' +
+            '"description": "description of the item reason",\n' +
             '}\n'
         }
       }

@@ -860,8 +860,9 @@ class MindmapManager {
     this.parseMap().then(() => {
       let issue = that.findIssue(uiNode.text, uiNode.id)
       if (issue == null) {
-        Alerts.showErrorToast('An error occurred')
-        return
+        issue = that._mindmapParser.getNodeById(uiNode.id)
+        // Alerts.showErrorToast('An error occurred')
+        // return
       }
       let enabledMode = that._processModes.find((m) => { return m.enabled })
       if (enabledMode == null) {
@@ -881,10 +882,10 @@ class MindmapManager {
     })
   }
   onClickAnswerProblemDeepen (uiNode, issue) {
-    if (!(issue instanceof Problem)) {
+    /* if (!(issue instanceof Problem)) {
       Alerts.showErrorToast('Invalid mode')
       return
-    }
+    } */
     let question = ProcessQuestions.PROBLEM_ANALYSIS
     question = question.replace('<problem>', issue.text)
     let items = MindmapManager.extractQuestionItems(question)
@@ -909,9 +910,10 @@ class MindmapManager {
     if (missingItems.length > 0) {
       Alerts.showErrorToast(`Missing variables: ${missingItems}`)
     } else {
+      let nodeId = issue.nodeId || issue._info.id
       MindmeisterClient.doActions(this._mapId,
-        [{text: question, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
-        [{id: issue.nodeId, image: IconsMap['tick-enabled']}]
+        [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
+        [{id: nodeId, image: IconsMap['tick-enabled']}]
       ).then(() => {
         Alerts.closeLoadingWindow()
         // location.reload()
@@ -919,10 +921,10 @@ class MindmapManager {
     }
   }
   onClickAnswerConsequenceMapping (uiNode, issue) {
-    if (!(issue instanceof Problem)) {
+    /* if (!(issue instanceof Problem)) {
       Alerts.showErrorToast('Invalid mode')
       return
-    }
+    } */
     let question = ProcessQuestions.CONSEQUENCE_MAPPING
     question = question.replace('<problem>', issue.text)
     let items = MindmapManager.extractQuestionItems(question)
@@ -945,9 +947,10 @@ class MindmapManager {
     if (missingItems.length > 0) {
       Alerts.showErrorToast(`Missing variables: ${missingItems}`)
     } else {
+      let nodeId = issue.nodeId || issue._info.id
       MindmeisterClient.doActions(this._mapId,
-        [{text: question, parentId: issue.nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
-        [{id: issue.nodeId, image: IconsMap['tick-enabled']}]
+        [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
+        [{id: nodeId, image: IconsMap['tick-enabled']}]
       ).then(() => {
         Alerts.closeLoadingWindow()
       })
