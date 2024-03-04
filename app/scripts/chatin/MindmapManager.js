@@ -23,25 +23,13 @@ class MindmapManager {
   constructor () {
     let that = this
     this._mapId = null
-    this._processModes = [
-      { name: 'PROBLEM_ARTICULATION',
-        templateNodeText: TemplateNodes.PROBLEM_ARTICULATION_MODE,
-        mindmapNode: null,
-        onEnable: () => { that.enableProblemArticulation() },
-        enabled: false
-      },
-      { name: 'CONSEQUENCE_MAPPING',
-        templateNodeText: TemplateNodes.CONSEQUENCE_MAPPING_MODE,
-        mindmapNode: null,
-        onEnable: () => { that.enableRelevanceMapping() },
-        enabled: false
-      }
-    ]
     this._styles = null
     this._variables = []
+    this._perceivedProblem = null
     this._scopingAnalysis = null
     this._mindmapParser = null
     this._problems = []
+    this.found = false
   }
 
   kudeatzaileakHasieratu (that) {
@@ -52,18 +40,67 @@ class MindmapManager {
       const callback = (mutationList, observer) => {
         for (const mutation of mutationList) {
           if (mutation.type === 'childList') {
+            mutation.removedNodes.forEach(node => {
+              if (node.classList && node.classList.contains('kr-view')) {
+                let style = node.style
+                if (style.position === 'absolute' && style.transformOrigin === 'left center') {
+                  let title = document.querySelectorAll('.addCauses')
+                  if (title) {
+                    title.forEach((t) => {
+                      t.remove()
+                    })
+                  }
+                }
+              }
+            })
             if (mutation.addedNodes) {
               if (mutation.addedNodes.length > 0) {
                 const node = mutation.addedNodes[0]
-                if (node.innerText && (node.innerText.includes('Attachments'))) {
-                  that.manageAttachmentsMenu(that, node)
+                if (node.innerText && (node.innerText.includes('Attachments') || node.innerText.includes('Archivos adjuntos'))) {
+                  let currentNode = that.getCurrentNode()
+                  if (!that.isAnswerNode(currentNode)) {
+                    that.manageAttachmentsMenu(that, node)
+                  }
                 } else if (node.innerHTML && node.innerHTML.includes(Locators.PDF_ELEMENT) && node.innerHTML.includes('.pdf')) {
                   console.log('PDF element found')
                   let divs = document.querySelectorAll('div.kr-view')
                   let targetDiv = Array.from(divs).find(div => div.getAttribute('style').includes('padding-top: 10px; padding-bottom: 10px; width: 320px; background-color: rgb(255, 255, 255);'))
-                  that.manageAttachmentsMenu(that, targetDiv)
-                } else if (node.innerText && node.innerText.includes('Drag & drop files')) {
+                  let currentNode = that.getCurrentNode()
+                  if (!that.isAnswerNode(currentNode)) {
+                    that.manageAttachmentsMenu(that, targetDiv)
+                  }
+                } else if (node.innerText && (node.innerText.includes('Drag & drop files') || node.innerText.includes('Arrastra y suelta archivos o pega enlaces en los temas.'))) {
                   that.manageContextMenu(that)
+                } else if (node.classList && node.classList.contains('kr-view')) {
+                  let style = node.style
+                  if (style.position === 'absolute' && style.transformOrigin === 'left center') {
+                    let currentNode = that.getCurrentNode()
+                    let nodeTitle = currentNode.innerText
+                    if (that.isAnswerNode(currentNode) || nodeTitle === 'PROBLEM ANALYSIS') {
+                      console.log(node)
+                      const h1Element = document.createElement('h2')
+                      h1Element.style.position = 'absolute'
+                      h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                      h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
+                      h1Element.textContent = 'more causes'
+                      h1Element.style.color = 'rgb(0, 170, 255)'
+                      h1Element.className = 'addCauses'
+                      node.insertAdjacentElement('afterend', h1Element)
+                      h1Element.addEventListener('click', (e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('add node')
+                        that.createCauseMappingNode(currentNode)
+                      })
+                      // node.className = 'addCausesButton'
+                      node.addEventListener('click', (e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('add node')
+                        that.createCauseMappingNode(currentNode)
+                      })
+                    }
+                  }
                 }
               }
             }
@@ -139,7 +176,6 @@ class MindmapManager {
         return mapNodes != null
       })
       if (newNodes) {
-        that.addModeManager()
         that.addAnswerClickManager()
         that.addQuestionClickManager()
       }
@@ -147,76 +183,35 @@ class MindmapManager {
     let config = { childList: true, subtree: true }
     obs.observe(parent, config)
     // obs.observe(document, config)
-    this.addModeManager()
     this.addAnswerClickManager()
     this.addQuestionClickManager()
   }
-  /**
-   *  Process mode management
-   */
-  addModeManager () {
-    let that = this
-    let processModeNodes = MindmapWrapper.getNodesByText(TemplateNodes.PROCESS_MODE)
-    if (processModeNodes == null || processModeNodes.length !== 1) return
-    that._processModes.forEach((m) => {
-      let modeNodes = MindmapWrapper.getNodesByText(m.templateNodeText)
-      if (modeNodes == null || modeNodes.length !== 1) return
-      let modeNode = modeNodes[0]
-      m.mindmapNode = modeNode
-      if (m.mindmapNode.classList != null) return
-      let iconEl = modeNode.getIconElement()
-      if (iconEl == null || (iconEl.classList != null && iconEl.classList.contains('chatin_mode'))) return
-      iconEl.classList.add('chatin_mode')
-      iconEl.style.removeProperty('pointer-events')
-      iconEl.addEventListener('click', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        that.onClickMode(m)
-      })
-    })
-  }
-  modeEnableChanges (mode) {
-    let nodes = []
-    this._processModes.forEach((m) => {
-      if (m.name === mode.name) {
-        nodes.push({
-          id: m.mindmapNode.id,
-          image: IconsMap['tick-enabled']
-        })
-      } else {
-        nodes.push({
-          id: m.mindmapNode.id,
-          image: IconsMap['tick-disabled']
-        })
-      }
-    })
-    return nodes
-  }
-  onClickMode (mode) {
-    let that = this
-    return new Promise((resolve, reject) => {
-      that._processModes.forEach((m) => {
-        if (m.name === mode.name) {
-          m.onEnable()
-        }
-      })
-    })
-  }
-  enableProblemArticulation () {
+
+  createCauseMappingNode (currentNode) {
     let that = this
     that.parseMap().then((mapInfo) => {
-      let scopingAnalysisNodes = this._mindmapParser.getNodesWithText(TemplateNodes.SCOPING_ANALYSIS)
+      let scopingAnalysisNodes = this._mindmapParser.getNodesWithText(TemplateNodes.PROBLEM_ANALYSIS)
       if (scopingAnalysisNodes == null || scopingAnalysisNodes.length === 0) return
-      let scopingAnalysisNode = scopingAnalysisNodes[0]
-      let question = ProcessQuestions.PROBLEM_STATEMENT
+      let question = ProcessQuestions.PROBLEM_ANALYSIS
       let items = MindmapManager.extractQuestionItems(question)
       let variables = that._variables
+      let perceivedProblem
+      if (currentNode.innerText === 'PROBLEM ANALYSIS') {
+        perceivedProblem = that._perceivedProblem
+      } else {
+        perceivedProblem = currentNode.innerText
+      }
       items.forEach((i) => {
-        let v = variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
-        _.remove(variables, v)
-        if (v == null) return
-        question = question.replace(`<${i}>`, v.value)
+        let v = variables.find((variable) => {
+          let variableName = variable.name.toLowerCase()
+          return variableName === i.toLowerCase()
+        })
+        if (v !== null && v !== undefined) {
+          question = question.replace(`<${i}>`, v.value)
+          _.remove(variables, v)
+        }
       })
+      question = question.replace(`<Problem>`, perceivedProblem)
       if (variables.length > 0) {
         console.log('Missing variables: ' + variables.map((v) => { return v.name }))
         question = question.replace('?', ' ')
@@ -229,22 +224,26 @@ class MindmapManager {
       if (missingItems.length > 0) {
         Alerts.showErrorToast(`Missing variables: ${missingItems}`)
       } else {
-        let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'PROBLEM_ARTICULATION' }))
-        MindmeisterClient.doActions(that._mapId, [{text: question, parentId: scopingAnalysisNode.id, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}], modeChanges).then(() => {
+        let parentId = currentNode.dataset.id
+        // let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'CAUSE_MAPPING' }))
+        MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}]).then(() => {
+          let title = document.querySelectorAll('.addCauses')
+          if (title) {
+            title.forEach((t) => {
+              t.remove()
+            })
+          }
+          /* let button = document.querySelectorAll('.addCausesButton')
+          if (button) {
+            button.forEach((t) => {
+              t.remove()
+            })
+          } */
           Alerts.closeLoadingWindow()
         })
       }
     })
   }
-  enableRelevanceMapping () {
-    let that = this
-    let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'CONSEQUENCE_MAPPING' }))
-    MindmeisterClient.doActions(that._mapId, [], modeChanges).then(() => {
-      // location.reload()
-      Alerts.closeLoadingWindow()
-    })
-  }
-
   /**
    *  Manage editor changes
    */
@@ -282,7 +281,7 @@ class MindmapManager {
   manageContextMenu (that) {
     document.querySelectorAll('div').forEach(function (div) {
       const expectedStyle = 'width: 90px; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
-      if (div.textContent.includes('Task') && div.getAttribute('style') === expectedStyle) {
+      if ((div.textContent.includes('Task') || div.textContent.includes('Tarea')) && div.getAttribute('style') === expectedStyle) {
         let questionNode = that.getCurrentNode()
         if (that.isQuestionNode(questionNode)) {
           let question = questionNode.innerText.replaceAll('\n', ' ')
@@ -488,14 +487,41 @@ class MindmapManager {
               })
               labels = gptProblemsLabels
               nodes = gptProblemsNodes
+              if (questionNode._info.title.startsWith('WHICH')) {
+                let allProblems = that.getPreviousProblems(that, questionNode)
+                if (allProblems) {
+                  let problems = allProblems.split(';')
+                  problems.pop()
+                  let currentProblem = problems.pop().split(':')
+                  gptProblemsNodes.push({
+                    text: currentProblem[0],
+                    style: PromptStyles.AnswerItem,
+                    image: IconsMap['tick-disabled'],
+                    parentId: node.id,
+                    note: currentProblem[1]
+                  })
+                  while (problems.length > 1) {
+                    let followingProblem = problems.pop().split(':')
+                    let currentProblem = problems.pop().split(':')
+                    gptProblemsNodes.push({
+                      text: currentProblem[0],
+                      style: PromptStyles.AnswerItem,
+                      image: IconsMap['tick-disabled'],
+                      parentId: node.id,
+                      note: currentProblem[1]
+                    })
+                    currentProblem = followingProblem
+                  }
+                }
+              }
               MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
                 Alerts.closeLoadingWindow()
                 if (this._processModes[0].enabled) {
                   let repeatedItems = labels.filter(label => that._problems.includes(label))
                   if (repeatedItems.length === 1) {
-                    Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
+                    Alerts.showAlertToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
                   } else if (repeatedItems.length > 1) {
-                    Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
+                    Alerts.showAlertToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
                   }
                 }
               })
@@ -601,16 +627,23 @@ class MindmapManager {
                         labels = otherProblemsLabels
                         nodes = otherProblemsNodes
                       }
+                      if (questionNode._info.title.startsWith('WHICH')) {
+                        let narrative = that.getNarrative(that, questionNode)
+                        if (narrative.problem) {
+                          let problems = narrative.problem.split(';')
+                          problems.pop()
+                          let currentProblem = problems.pop().split(':')
+                          nodes.push({
+                            text: currentProblem[0],
+                            style: PromptStyles.AnswerItem,
+                            image: IconsMap['tick-disabled'],
+                            parentId: node.id,
+                            note: currentProblem[1]
+                          })
+                        }
+                      }
                       MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
                         Alerts.closeLoadingWindow()
-                        if (this._processModes[0].enabled) {
-                          let repeatedItems = labels.filter(label => that._problems.includes(label))
-                          if (repeatedItems.length === 1) {
-                            Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
-                          } else if (repeatedItems.length > 1) {
-                            Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
-                          }
-                        }
                       })
                     }
                     LLMClient.pdfBasedQuestion({
@@ -858,73 +891,13 @@ class MindmapManager {
     let that = this
     Alerts.showLoadingWindow(`Loading...`)
     this.parseMap().then(() => {
-      let issue = that.findIssue(uiNode.text, uiNode.id)
-      if (issue == null) {
-        issue = that._mindmapParser.getNodeById(uiNode.id)
-        // Alerts.showErrorToast('An error occurred')
-        // return
-      }
-      let enabledMode = that._processModes.find((m) => { return m.enabled })
-      if (enabledMode == null) {
-        Alerts.showErrorToast('An error occurred')
-        return
-      }
-      switch (enabledMode.name) {
-        case 'PROBLEM_ARTICULATION':
-          that.onClickAnswerProblemDeepen(uiNode, issue)
-          break
-        case 'CONSEQUENCE_MAPPING':
-          that.onClickAnswerConsequenceMapping(uiNode, issue)
-          break
-      }
+      let issue = that._mindmapParser.getNodeById(uiNode.id)
+      that.onClickAnswerConsequenceMapping(uiNode, issue)
     }).catch((error) => {
       Alerts.showErrorToast('An error occurred' + error)
     })
   }
-  onClickAnswerProblemDeepen (uiNode, issue) {
-    /* if (!(issue instanceof Problem)) {
-      Alerts.showErrorToast('Invalid mode')
-      return
-    } */
-    let question = ProcessQuestions.PROBLEM_ANALYSIS
-    question = question.replace('<problem>', issue.text)
-    let items = MindmapManager.extractQuestionItems(question)
-    let variables = this._variables
-    items.forEach((i) => {
-      let v = variables.find((variable) => { return variable.name.toLowerCase() === i.toLowerCase() })
-      _.remove(variables, v)
-      if (v == null) return
-      question = question.replace(`<${i}>`, v.value)
-    })
-    if (variables.length > 0) {
-      console.log('Missing variables: ' + variables.map((v) => { return v.name }))
-      question = question.replace('?', '')
-      variables.forEach((v) => {
-        if (v.value && v.name) {
-          question = question + ' and assuming that ' + v.name + ' is ' + v.value
-        }
-      })
-      question = question + '?'
-    }
-    let missingItems = MindmapManager.extractQuestionItems(question)
-    if (missingItems.length > 0) {
-      Alerts.showErrorToast(`Missing variables: ${missingItems}`)
-    } else {
-      let nodeId = issue.nodeId || issue._info.id
-      MindmeisterClient.doActions(this._mapId,
-        [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
-        [{id: nodeId, image: IconsMap['tick-enabled']}]
-      ).then(() => {
-        Alerts.closeLoadingWindow()
-        // location.reload()
-      })
-    }
-  }
   onClickAnswerConsequenceMapping (uiNode, issue) {
-    /* if (!(issue instanceof Problem)) {
-      Alerts.showErrorToast('Invalid mode')
-      return
-    } */
     let question = ProcessQuestions.CONSEQUENCE_MAPPING
     question = question.replace('<problem>', issue.text)
     let items = MindmapManager.extractQuestionItems(question)
@@ -953,8 +926,15 @@ class MindmapManager {
         [{id: nodeId, image: IconsMap['tick-enabled']}]
       ).then(() => {
         Alerts.closeLoadingWindow()
+        let title = document.querySelectorAll('.addCauses')
+        if (title) {
+          title.forEach((t) => {
+            t.remove()
+          })
+        }
       })
     }
+    Alerts.closeLoadingWindow()
   }
   getAnswerNodes () {
     // green nodes with tick (either disabled or enabled) icon
@@ -973,10 +953,11 @@ class MindmapManager {
    */
   parseVariables () {
     this._variables = []
-    let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.QUESTION_MODEL)
+    this._perceivedProblem = null
+    let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.PROBLEM_SPACE)
     if (questionModelNodes == null || questionModelNodes.length === 0) return // todo
     let questionModelNode = questionModelNodes[0]
-    let variablesNodes = questionModelNode.getChildrenWithText(TemplateNodes.VARIABLES)
+    let variablesNodes = questionModelNode.getChildrenWithText(TemplateNodes.CONTEXT)
     if (variablesNodes == null || variablesNodes.length === 0) return // todo
     let variableNode = variablesNodes[0]
     let definedVariables = variableNode.children
@@ -988,29 +969,37 @@ class MindmapManager {
       let firstChild = variableChildren[0]
       variables.push({name: variableName, value: firstChild.text})
     })
+    let perceivedProblemNodes = questionModelNode.getChildrenWithText(TemplateNodes.PERCEIVED_PROBLEM)
+    if (perceivedProblemNodes == null || perceivedProblemNodes.length === 0) return // todo
+    let perceivedProblemNode = perceivedProblemNodes[0]
+    let definedPercivedProblem
+    if (perceivedProblemNode.children && perceivedProblemNode.children.length > 0) {
+      definedPercivedProblem = perceivedProblemNode.children[0]
+    } else {
+      Alerts.showAlertToast('No perceived problem defined')
+    }
+    this._perceivedProblem = definedPercivedProblem.text
     this._variables = variables
   }
-  parseStyle () {
+  parseStyle (callback) {
     this._styles = []
-    /* let questionModelNodes = this._mindmapParser.getNodesWithText(TemplateNodes.QUESTION_MODEL)
-    if (questionModelNodes == null || questionModelNodes.length === 0) return // todo
-    let questionModelNode = questionModelNodes[0]
-    let stylesNodes = questionModelNode.getChildrenWithText(TemplateNodes.STYLE)
-    if (stylesNodes == null || stylesNodes.length === 0) return // todo
-    let stylesNode = stylesNodes[0]
-    let definedStyles = stylesNode.children
     let styles = []
-    definedStyles.forEach((v) => {
-      let styleName = v.text
-      let styleChildren = v.children
-      if (styleChildren == null || styleChildren.length === 0) return
-      let firstChild = styleChildren[0]
-      styles.push({name: styleName, value: firstChild.text})
-    }) */
-    let styles = []
-    styles.push({name: 'Number of items', value: ITEMS})
-    styles.push({name: 'Description', value: 'provide rationales'})
-    this._styles = styles
+    chrome.runtime.sendMessage({ scope: 'parameterManager', cmd: 'getNumberOfAuthorsParameter' }, ({ parameter }) => {
+      if (parameter && parameter !== '') {
+        styles.push({name: 'Number of items', value: parameter})
+        styles.push({name: 'Description', value: 'provide rationales'})
+        this._styles = styles
+        if (callback) callback()
+      } else {
+        document.querySelector('#numberOfAuthorsParameterInput').value = ITEMS
+        styles.push({name: 'Number of items', value: ITEMS})
+        styles.push({name: 'Description', value: 'provide rationales'})
+        this._styles = styles
+        if (callback) callback()
+        // setNumberOfAuthorsParameter(3)
+      }
+    })
+    // styles.push({name: 'Number of items', value: ITEMS})
   }
 
   parseScopingAnalysis () {
@@ -1019,14 +1008,14 @@ class MindmapManager {
   parseFirstLevelProblems () {
     let that = this
     that._problems = []
-    let scopingAnalysisNodes = this._mindmapParser.getNodesWithText(TemplateNodes.SCOPING_ANALYSIS)
+    let scopingAnalysisNodes = this._mindmapParser.getNodesWithText(TemplateNodes.PROBLEM_ANALYSIS)
     if (scopingAnalysisNodes == null || scopingAnalysisNodes.length === 0) return // todo
     let scopingAnalysisNode = scopingAnalysisNodes[0]
     let scopingAnalysisNodeChildren = scopingAnalysisNode.children
     // let problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
     let problems = []
     scopingAnalysisNodeChildren.forEach((c) => {
-      const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_STATEMENT)
+      const problemPromptRE = MindmapManager.createRegexpFromPrompt(ProcessQuestions.PROBLEM_ANALYSIS)
       if (problemPromptRE.test(c.text)) {
         c.children.forEach((p) => {
           let pro = new Problem(p.text, p.id)
@@ -1064,24 +1053,16 @@ class MindmapManager {
       }
     })
   }
-  parseProcessMode () {
-    this._processModes.forEach((m) => {
-      if (m.mindmapNode == null) return
-      let icon = m.mindmapNode.emojiIcon
-      if (icon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g, '')) m.enabled = true
-      else m.enabled = false
-    })
-  }
   parseMap () {
     let that = this
     return new Promise((resolve, reject) => {
       MindmeisterClient.getMap(that._mapId).then((mapInfo) => {
         that._mindmapParser = new MindmapContentParser(mapInfo)
-        that.parseProcessMode()
         that.parseVariables()
-        that.parseStyle()
-        that.parseScopingAnalysis()
-        resolve()
+        that.parseStyle(() => {
+          that.parseScopingAnalysis()
+          resolve()
+        })
       })
     })
   }
@@ -1243,7 +1224,7 @@ class MindmapManager {
     let narrative = {question: question, problem: '', relevance: '', solution: '', feasability: '', effectiveness: ''}
     let RQPurpose = that.getQuestionPurpose(question)
     let firstChild = that._mindmapParser.getNodeById(questionNode._info.parent)
-    while (firstChild._info.title !== TemplateNodes.SCOPING_ANALYSIS) {
+    while (firstChild._info.title !== TemplateNodes.PROBLEM_ANALYSIS) {
       if (that.hasQuestionType(firstChild, 'WHY IS') && RQPurpose !== 'relevance') {
         narrative.relevance = that.getQuestionTypeAnswers(firstChild, 'WHICH CONSEQUENCES')
       }
@@ -1264,6 +1245,18 @@ class MindmapManager {
       firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
     }
     return narrative
+  }
+  getPreviousProblems (that, questionNode) {
+    let problems = ''
+    let firstChild = that._mindmapParser.getNodeById(questionNode._info.parent)
+    while (firstChild._info.title !== TemplateNodes.PROBLEM_ANALYSIS) {
+      let secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
+      if (that.isQuestionType(secondChild, 'WHY DOES')) {
+        problems += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + firstChild._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
+      }
+      firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
+    }
+    return problems
   }
   getLastNodeOfNarrative (that, questionNode) {
     let firstChild = that._mindmapParser.getNodeById(questionNode._info.id)

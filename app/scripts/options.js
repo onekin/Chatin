@@ -15,10 +15,20 @@ document.getElementById('mindmeisterEnableCheckbox').addEventListener('change', 
       var aux = document.getElementById('mindmeisterEnableCheckbox')
       aux.checked = true
       aux.disabled = true
-      Alerts.showToast('Authorization with Mindmeister done successfully')
+      Alerts.showOptionsToast('Authorization with Mindmeister done successfully')
     }).catch((error) => {
       Alerts.showErrorToast(error.message)
     })
+  }
+})
+
+document.querySelector('#numberOfAuthorsParameterButton').addEventListener('click', () => {
+  let currentValue = document.querySelector('#numberOfAuthorsParameterInput').value
+  let messageLabel = document.querySelector('#numberOfAuthorsParameterMessage')
+  if (checkNumberOfAuthorsParameter(currentValue)) {
+    setNumberOfAuthorsParameter(currentValue, messageLabel)
+  } else {
+    messageLabel.innerHTML = 'Invalid parameter'
   }
 })
 
@@ -45,6 +55,15 @@ if (window.location.href.includes('pages/options.html')) {
   chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, ({ llm = defaultLLM }) => {
     document.querySelector('#LLMDropdown').value = llm || defaultLLM
     showSelectedLLMConfiguration(llm || defaultLLM)
+  })
+
+  chrome.runtime.sendMessage({ scope: 'parameterManager', cmd: 'getNumberOfAuthorsParameter' }, ({ parameter }) => {
+    if (parameter && parameter !== '') {
+      document.querySelector('#numberOfAuthorsParameterInput').value = parameter
+    } else {
+      document.querySelector('#numberOfAuthorsParameterInput').value = 3
+      setNumberOfAuthorsParameter(3)
+    }
   })
 
   // Get all the buttons with the same class name
@@ -117,4 +136,25 @@ function setAPIKey (selectedLLM, apiKey) {
     let input = document.querySelector('#' + selectedLLM + '-APIKey')
     input.disabled = true
   })
+}
+
+function setNumberOfAuthorsParameter (numberOfAuthorsParameter, messageLabel) {
+  chrome.runtime.sendMessage({
+    scope: 'parameterManager',
+    cmd: 'setNumberOfAuthorsParameter',
+    data: {numberOfAuthorsParameter: numberOfAuthorsParameter}
+  }, ({numberOfAuthorsParameter}) => {
+    console.debug('setNumberOfAuthorsParameter ' + numberOfAuthorsParameter)
+    if (messageLabel) {
+      messageLabel.innerHTML = 'Value saved'
+    }
+  })
+}
+
+function checkNumberOfAuthorsParameter (parameter) {
+  if (parameter <= 10) {
+    return true
+  } else {
+    return false
+  }
 }

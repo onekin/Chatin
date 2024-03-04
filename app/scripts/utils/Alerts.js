@@ -24,6 +24,17 @@ class Alerts {
     })
   }
 
+  static showAlertToast (message, destroyFunc) {
+    swal.fire({
+      icon: 'info',
+      text: message,
+      toast: true,
+      position: 'bottom-end',
+      showConfirmButton: false,
+      didDestroy: destroyFunc
+    })
+  }
+
   static showWarningWindow (message) {
     swal.fire({
       icon: 'warning',
@@ -36,6 +47,17 @@ class Alerts {
       icon: 'warning',
       toast: true,
       html: content,
+      width: '500px',
+      position: 'bottom-end',
+      confirmButtonText: 'Close'
+    })
+  }
+
+  static showOptionsToast (content) {
+    swal.fire({
+      icon: 'warning',
+      toast: true,
+      html: '<h1 style="font-size:30px">' + content + '</h1>',
       width: '500px',
       position: 'bottom-end',
       confirmButtonText: 'Close'
