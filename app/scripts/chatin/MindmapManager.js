@@ -74,58 +74,60 @@ class MindmapManager {
                 } else if (node.classList && node.classList.contains('kr-view')) {
                   let style = node.style
                   if (style.position === 'absolute' && style.transformOrigin === 'left center') {
+                    node.classList.add('addButton')
                     let currentNode = that.getCurrentNode()
                     let nodeTitle = currentNode.innerText
                     if (that.isAnswerNode(currentNode) || nodeTitle === 'PROBLEM ANALYSIS') {
                       that.parseMap().then(() => {
                         let nodeObject = that._mindmapParser.getNodeById(currentNode.dataset.id)
-                        let parent = that._mindmapParser.getNodeById(nodeObject._info.parent)
-                        if (parent._info.title.startsWith('WHICH')) {
-                          console.log(node)
-                          const h1Element = document.createElement('h2')
-                          h1Element.style.position = 'absolute'
-                          h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
-                          h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
-                          h1Element.textContent = 'more consequences'
-                          h1Element.style.color = 'rgb(0, 170, 255)'
-                          h1Element.className = 'plusTitle'
-                          node.insertAdjacentElement('afterend', h1Element)
-                          h1Element.addEventListener('click', (e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            console.log('add node')
-                            that.onClickAnswer(currentNode)
-                          })
-                          // node.className = 'addCausesButton'
-                          node.addEventListener('click', (e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            console.log('add node')
-                            that.onClickAnswer(currentNode)
-                          })
-                        } else {
-                          console.log(node)
-                          const h1Element = document.createElement('h2')
-                          h1Element.style.position = 'absolute'
-                          h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
-                          h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
-                          h1Element.textContent = 'more causes'
-                          h1Element.style.color = 'rgb(0, 170, 255)'
-                          h1Element.className = 'plusTitle'
-                          node.insertAdjacentElement('afterend', h1Element)
-                          h1Element.addEventListener('click', (e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            console.log('add node')
-                            that.createCauseMappingNode(currentNode)
-                          })
-                          // node.className = 'addCausesButton'
-                          node.addEventListener('click', (e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            console.log('add node')
-                            that.createCauseMappingNode(currentNode)
-                          })
+                        if (nodeObject._info) {
+                          let parent = that._mindmapParser.getNodeById(nodeObject._info.parent)
+                          if (parent._info.title.startsWith('WHICH') || that.isAddressProblemNode(currentNode)) {
+                            const h1Element = document.createElement('h2')
+                            h1Element.style.position = 'absolute'
+                            h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                            h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
+                            h1Element.textContent = 'more consequences'
+                            h1Element.style.color = 'rgb(0, 170, 255)'
+                            h1Element.className = 'plusTitle'
+                            node.insertAdjacentElement('afterend', h1Element)
+                            h1Element.addEventListener('click', (e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              console.log('add node')
+                              that.onClickAnswer(currentNode)
+                            })
+                            // node.className = 'addCausesButton'
+                            node.addEventListener('click', (e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              console.log('add node')
+                              that.onClickAnswer(currentNode)
+                            })
+                          } else {
+                            console.log(node)
+                            const h1Element = document.createElement('h2')
+                            h1Element.style.position = 'absolute'
+                            h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                            h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
+                            h1Element.textContent = 'more causes'
+                            h1Element.style.color = 'rgb(0, 170, 255)'
+                            h1Element.className = 'plusTitle'
+                            node.insertAdjacentElement('afterend', h1Element)
+                            h1Element.addEventListener('click', (e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              console.log('add node')
+                              that.createCauseMappingNode(currentNode)
+                            })
+                            // node.className = 'addCausesButton'
+                            node.addEventListener('click', (e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              console.log('add node')
+                              that.createCauseMappingNode(currentNode)
+                            })
+                          }
                         }
                       })
                     } else if (that.isQuestionNode(currentNode)) {
@@ -149,6 +151,52 @@ class MindmapManager {
                         e.stopPropagation()
                         console.log('add node')
                         that.performQuestion(currentNode)
+                      })
+                    }
+                    that.addObserverToAddButton()
+                  } else if (style.position === 'absolute' && style.transformOrigin === 'center top') {
+                    let currentNode = that.getCurrentNode()
+                    if (that.isAnswerNode(currentNode)) {
+                      that.parseMap().then(() => {
+                        let nodeObject = that._mindmapParser.getNodeById(currentNode.dataset.id)
+                        let parent = that._mindmapParser.getNodeById(nodeObject._info.parent)
+                        if (parent._info.title.startsWith('WHICH') || that.isAddressProblemNode(currentNode)) {
+                          node.addEventListener('click', (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            that.addSiblingNode(that, nodeObject, 'consequenceNode')
+                          })
+                        } else {
+                          node.addEventListener('click', (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            that.addSiblingNode(that, nodeObject, 'causeNode')
+                          })
+                        }
+                      })
+                    } else if (that.isQuestionNode(currentNode)) {
+                      that.parseMap().then(() => {
+                        let nodeObject = that._mindmapParser.getNodeById(currentNode.dataset.id)
+                        /* const h1Element = document.createElement('h2')
+                        h1Element.style.position = 'absolute'
+                        h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                        h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
+                        // h1Element.textContent = 'add question'
+                        h1Element.style.color = 'rgb(0, 170, 255)'
+                        h1Element.className = 'plusTitle'
+                        node.insertAdjacentElement('afterend', h1Element)
+                        h1Element.addEventListener('click', (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          // that.performQuestion(currentNode)
+                        })
+                        // node.className = 'addCausesButton'
+                        */
+                        node.addEventListener('click', (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          that.addSiblingNode(that, nodeObject, 'questionNode')
+                        })
                       })
                     }
                   }
@@ -278,7 +326,7 @@ class MindmapManager {
         let parentId = currentNode.dataset.id
         // let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'CAUSE_MAPPING' }))
         MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}]).then(() => {
-        // MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt}]).then(() => {
+          // MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt}]).then(() => {
           let title = document.querySelectorAll('.plusTitle')
           if (title) {
             title.forEach((t) => {
@@ -462,9 +510,13 @@ class MindmapManager {
     })
   }
   getQuestionNodes () {
-    let questionRegExp = /^(WHICH|HOW|WHY).+\?$/i
-    let questionNodes = MindmapWrapper.getNodesByTextRegexp(questionRegExp)
+    // let questionRegExp = /^(WHICH|HOW|WHY).+\?$/i
+    // let questionNodes = MindmapWrapper.getNodesByTextRegexp(questionRegExp)
     // todo -> check node style and icon
+    // green nodes with tick (either disabled or enabled) icon
+    let questionNodesColor = Utils.hexToRgb(PromptStyles.QuestionPrompt.backgroundColor)
+    let questionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(questionNodesColor)
+    questionNodes = questionNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['magnifier'].mindmeisterName.replace(/:/g, '') || n.emojiIcon === IconsMap['magnifier'].mindmeisterName.replace(/:/g, '')) })
     return questionNodes
   }
   getStyle () {
@@ -493,13 +545,20 @@ class MindmapManager {
     Alerts.showLoadingWindow('Creating prompt...')
     let that = this
     this.parseMap().then(() => {
-      let questionNode = that._mindmapParser.getNodeById(node.dataset.id)
+      let questionNode, nodeId
+      if (node.dataset) {
+        questionNode = that._mindmapParser.getNodeById(node.dataset.id)
+        nodeId = node.dataset.id
+      } else {
+        questionNode = that._mindmapParser.getNodeById(node.id)
+        nodeId = node.id
+      }
       let gptBasedNodes = questionNode.children.filter((c) => { return c._info.style === 'FFFFFF,100,0,0,2BD9D9,1,' })
       let prompt
       if (gptBasedNodes.length > 0) {
         prompt = PromptBuilder.getPromptForGPTAlternativeNodes(this, node.text, gptBasedNodes)
       } else {
-        prompt = PromptBuilder.getPromptForGPTNodes(this, node.innerText)
+        prompt = PromptBuilder.getPromptForGPTNodes(this, node.text)
       }
       let title = null
       let note = null
@@ -533,7 +592,7 @@ class MindmapManager {
                   text: c.label,
                   style: PromptStyles.AnswerItem,
                   image: IconsMap['tick-disabled'],
-                  parentId: node.dataset.id,
+                  parentId: nodeId,
                   note: c.description
                 }
               })
@@ -549,7 +608,7 @@ class MindmapManager {
                     text: currentProblem[0],
                     style: PromptStyles.ProblemForConsequenceItem,
                     image: IconsMap['tick-disabled'],
-                    parentId: node.dataset.id,
+                    parentId: nodeId,
                     note: currentProblem[1]
                   })
                   while (problems.length > 1) {
@@ -559,7 +618,7 @@ class MindmapManager {
                       text: currentProblem[0],
                       style: PromptStyles.ProblemForConsequenceItem,
                       image: IconsMap['tick-disabled'],
-                      parentId: node.dataset.id,
+                      parentId: nodeId,
                       note: currentProblem[1]
                     })
                     currentProblem = followingProblem
@@ -932,8 +991,87 @@ class MindmapManager {
       iconElement.addEventListener('click', (e) => {
         e.preventDefault()
         e.stopPropagation()
-        that.onClickAnswer(n)
+        that.onClickIconAnswer(n)
       })
+    })
+  }
+  onClickIconAnswer (uiNode) {
+    // todo
+    let that = this
+    let icon = uiNode.getIconElement()
+    let iconStyle = icon.getAttribute('aria-label')
+    if (iconStyle.includes('white_check_mark')) {
+      that.changeToAnswerNode(uiNode)
+    } else {
+      that.changeToAddressedProblemNode(uiNode)
+    }
+    Alerts.showLoadingWindow(`Loading...`)
+  }
+  addSiblingNode (that, node, type) {
+    // let that = this
+    let nodeId = node._info.parent
+    if (type === 'questionNode') {
+      MindmeisterClient.doActions(that._mapId, [{text: '<add your question>', parentId: nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}]).then(() => {
+        Alerts.closeLoadingWindow()
+      })
+    } else if (type === 'causeNode') {
+      MindmeisterClient.doActions(that._mapId,
+        [{text: '<add your cause>', parentId: nodeId, style: PromptStyles.AnswerItem, image: IconsMap['tick-disabled']}]
+      ).then(() => {
+        Alerts.closeLoadingWindow()
+      })
+    } else if (type === 'consequenceNode') {
+      MindmeisterClient.doActions(that._mapId,
+        [{text: '<add your consequence>', parentId: nodeId, style: PromptStyles.AnswerItem, image: IconsMap['tick-disabled']}]
+      ).then(() => {
+        Alerts.closeLoadingWindow()
+      })
+    }
+  }
+  changeToAnswerNode (uiNode) {
+    // todo
+    let that = this
+    Alerts.showLoadingWindow(`Loading...`)
+    this.parseMap().then(() => {
+      // let issue = that._mindmapParser.getNodeById(uiNode.id)
+      MindmeisterClient.doActions(this._mapId,
+        [],
+        // [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt}],
+        [{id: uiNode.id, style: PromptStyles.AnswerItem, image: IconsMap['tick-disabled']}]
+      ).then(() => {
+        Alerts.closeLoadingWindow()
+        let title = document.querySelectorAll('.plusTitle')
+        if (title) {
+          title.forEach((t) => {
+            t.remove()
+          })
+        }
+      })
+    }).catch((error) => {
+      Alerts.showErrorToast('An error occurred' + error)
+    })
+  }
+  changeToAddressedProblemNode (uiNode) {
+    // todo
+    let that = this
+    Alerts.showLoadingWindow(`Loading...`)
+    this.parseMap().then(() => {
+      // let issue = that._mindmapParser.getNodeById(uiNode.id)
+      MindmeisterClient.doActions(this._mapId,
+        [],
+        // [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt}],
+        [{id: uiNode.id, style: PromptStyles.AddressedProblems, image: IconsMap['tick-enabled']}]
+      ).then(() => {
+        Alerts.closeLoadingWindow()
+        let title = document.querySelectorAll('.plusTitle')
+        if (title) {
+          title.forEach((t) => {
+            t.remove()
+          })
+        }
+      })
+    }).catch((error) => {
+      Alerts.showErrorToast('An error occurred' + error)
     })
   }
   onClickAnswer (uiNode) {
@@ -992,11 +1130,13 @@ class MindmapManager {
     // green nodes with tick (either disabled or enabled) icon
     let answerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItem.backgroundColor)
     let pdfBasedAnswerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItemPDFBased.backgroundColor)
+    let addressedProblemsColor = Utils.hexToRgb(PromptStyles.AddressedProblems.backgroundColor)
     let aggregatedAnswerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItemAggregation.backgroundColor)
     let questionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(answerNodesColor)
     let pdfBasedQuestionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(pdfBasedAnswerNodesColor)
     let aggregatedAnswerNodes = MindmapWrapper.getNodesByRGBBackgroundColor(aggregatedAnswerNodesColor)
-    questionNodes = questionNodes.concat(pdfBasedQuestionNodes).concat(aggregatedAnswerNodes)
+    let addressedProblemsNodes = MindmapWrapper.getNodesByRGBBackgroundColor(addressedProblemsColor)
+    questionNodes = questionNodes.concat(pdfBasedQuestionNodes).concat(aggregatedAnswerNodes).concat(addressedProblemsNodes)
     questionNodes = questionNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g, '') || n.emojiIcon === IconsMap['tick-disabled'].mindmeisterName.replace(/:/g, '')) })
     return questionNodes
   }
@@ -1223,7 +1363,14 @@ class MindmapManager {
     }
   }
   isAnswerNode (questionNode) {
-    if (questionNode.style.backgroundColor === 'rgb(150, 219, 11)' || questionNode.style.backgroundColor === 'rgb(43, 217, 217)' || questionNode.style.backgroundColor === 'rgb(0, 100, 0)') {
+    if (questionNode.style.backgroundColor === 'rgb(150, 219, 11)' || questionNode.style.backgroundColor === 'rgb(43, 217, 217)' || questionNode.style.backgroundColor === 'rgb(0, 100, 0)' || questionNode.style.backgroundColor === 'rgb(194, 24, 7)') {
+      return true
+    } else {
+      return false
+    }
+  }
+  isAddressProblemNode (questionNode) {
+    if (questionNode.style.backgroundColor === 'rgb(194, 24, 7)') {
       return true
     } else {
       return false
@@ -1375,6 +1522,26 @@ class MindmapManager {
       return 'relevance'
     }
     return null
+  }
+  addObserverToAddButton () {
+    // Select the node that you want to observe
+    const targetNode = document.querySelector('.addButton')
+    // Options for the observer (which mutations to observe)
+    const config = { attributes: true, attributeOldValue: true }
+    // Callback function to execute when mutations are observed
+    const callback = function (mutationsList, observer) {
+      for (const mutation of mutationsList) {
+        if (mutation.type === 'attributes') {
+          if (mutation.attributeName === 'style') {
+            Utils.reloadLabels()
+          }
+        }
+      }
+    }
+    // Create an instance of MutationObserver
+    const observer = new MutationObserver(callback)
+    // Start observing the target node for configured mutations
+    observer.observe(targetNode, config)
   }
 }
 

@@ -67,6 +67,13 @@ class Utils {
     }
   }
 
+  static reloadLabels () {
+    let button = document.querySelector('.addButton')
+    let title = document.querySelector('.plusTitle')
+    title.style.top = `${parseInt(button.style.top, 10) - 24}px`
+    title.style.left = `${parseInt(button.style.left, 10) + 42}px`
+  }
+
   static prettifyNodeText (text) {
     const lineChars = 20
     let newText = ''
