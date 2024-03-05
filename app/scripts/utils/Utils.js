@@ -69,9 +69,17 @@ class Utils {
 
   static reloadLabels () {
     let button = document.querySelector('.addButton')
+    let button2 = document.querySelector('.addOwnButton')
     let title = document.querySelector('.plusTitle')
-    title.style.top = `${parseInt(button.style.top, 10) - 24}px`
-    title.style.left = `${parseInt(button.style.left, 10) + 42}px`
+    let title2 = document.querySelector('.plusTitleOwn')
+    if (title && button) {
+      title.style.top = `${parseInt(button.style.top, 10) - 24}px`
+      title.style.left = `${parseInt(button.style.left, 10) + 42}px`
+    }
+    if (title2 && button2) {
+      title2.style.top = `${parseInt(button2.style.top, 10) - 24}px`
+      title2.style.left = `${parseInt(button2.style.left, 10) + 42}px`
+    }
   }
 
   static prettifyNodeText (text) {

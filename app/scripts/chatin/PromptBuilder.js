@@ -37,11 +37,11 @@ class PromptBuilder {
     prompt += '{\n' + '"problem": ['
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_problem_name":"name for the problem",' +
+        prompt += '{"GPT_problem_name":"name for the problem in a problematic style",' +
           '"description": "description of the problem that ' + description + '",' +
           '}'
       } else {
-        prompt += ',{"GPT_problem_name":"name for the problem",' +
+        prompt += ',{"GPT_problem_name":"name for the problem in a problematic style",' +
           '"description": "description of the problem that ' + description + '",' +
           '}'
       }
@@ -55,11 +55,11 @@ class PromptBuilder {
     prompt += '{\n' + '"relevance": ['
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_relevance_name":"relevance name",' +
+        prompt += '{"GPT_relevance_name":"name for the consequence in a problematic style",' +
           '"description": "description of the relevance reason that ' + description + '",' +
           '}'
       } else {
-        prompt += ',{"GPT_relevance_name":"relevance name",' +
+        prompt += ',{"GPT_relevance_name":"name for the consequence in a problematic style",' +
           '"description": "description of the relevance reason that ' + description + '",' +
           '}'
       }
@@ -73,11 +73,11 @@ class PromptBuilder {
     prompt += '{\n' + '"items": ['
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_item_name":"item name",' +
+        prompt += '{"GPT_item_name":"name for item in a problematic style",' +
           '"description": "description of the item reason that ' + description + '",' +
           '}'
       } else {
-        prompt += ',{"GPT_item_name":"item name",' +
+        prompt += ',{"GPT_item_name":"name for item in a problematic style",' +
           '"description": "description of the item reason that ' + description + '",' +
           '}'
       }
@@ -134,11 +134,11 @@ class PromptBuilder {
 
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_problem_name":"name for the problem",\n' +
+        prompt += '{"GPT_problem_name":"name for the problem in a problematic style",\n' +
           '"description": "description of the problem",\n' +
           '}'
       } else {
-        prompt += ',{"GPT_problem_name":"name for the problem",\n' +
+        prompt += ',{"GPT_problem_name":"name for the problem in a problematic style",\n' +
           '"description": "description of the problem",\n' +
           '}\n'
       }
@@ -164,11 +164,11 @@ class PromptBuilder {
     prompt += '{\n' + '"relevance": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_relevance_name":"relevance name",\n' +
+        prompt += '{"GPT_relevance_name":"name for the consequence in a problematic style",\n' +
           '"description": "description of the relevance reason",\n' +
           '}\n'
       } else {
-        prompt += ',{"GPT_relevance_name":"relevance name",\n' +
+        prompt += ',{"GPT_relevance_name":"name for the consequence in a problematic style",\n' +
           '"description": "description of the relevance reason",\n' +
           '}\n'
       }
@@ -194,11 +194,11 @@ class PromptBuilder {
     prompt += '{\n' + '"relevance": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_item_name":"item name",\n' +
+        prompt += '{"GPT_item_name":"name for item in a problematic style",\n' +
           '"description": "description of the item reason",\n' +
           '}\n'
       } else {
-        prompt += ',{"GPT_item_name":"item name",\n' +
+        prompt += ',{"GPT_item_name":"name for item in a problematic style",\n' +
           '"description": "description of the item reason",\n' +
           '}\n'
       }
@@ -242,12 +242,12 @@ class PromptBuilder {
     prompt += '{\n' + '"problem": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"problem_name":"name for the problem",\n' +
+        prompt += '{"problem_name":"name for the problem in a problematic style",\n' +
           '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
           '"description": "description of the problem",\n' +
           '}'
       } else {
-        prompt += ',{"problem_name":"name for the problem",\n' +
+        prompt += ',{"problem_name":"name for the problem in a problematic style",\n' +
           '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
           '"description": "description of the problem",\n' +
           '}\n'
@@ -256,11 +256,11 @@ class PromptBuilder {
     if (chatGPTBasedAnswers) {
       for (let i = 0; i < numberOfItems; i++) {
         if (i === 0) {
-          prompt += '{"GPT_problem_name":"name for the problem",\n' +
+          prompt += '{"GPT_problem_name":"name for the problem in a problematic style",\n' +
             '"description": "description of the problem",\n' +
             '}'
         } else {
-          prompt += ',{"GPT_problem_name":"name for the problem",\n' +
+          prompt += ',{"GPT_problem_name":"name for the problem in a problematic style",\n' +
             '"description": "description of the problem",\n' +
             '}\n'
         }
@@ -275,12 +275,12 @@ class PromptBuilder {
     prompt += '{\n' + '"relevance": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"relevance_name":"relevance name",\n' +
+        prompt += '{"relevance_name":"name for the consequence in a problematic style",\n' +
           '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
           '"description": "description of the relevance reason",\n' +
           '}'
       } else {
-        prompt += ',{"relevance_name":"relevance name",\n' +
+        prompt += ',{"relevance_name":"name for the consequence in a problematic style",\n' +
           '"excerpt": "[Excerpt from the provided text that justifies the existance of this problem]",\n' +
           '"description": "description of the relevance reason",\n' +
           '}'
@@ -289,11 +289,11 @@ class PromptBuilder {
     if (chatGPTBasedAnswers) {
       for (let i = 0; i < numberOfItems; i++) {
         if (i === 0) {
-          prompt += '{"GPT_relevance_name":"relevance name",\n' +
+          prompt += '{"GPT_relevance_name":"name for the consequence in a problematic style",\n' +
             '"description": "description of the relevance reason",\n' +
             '}\n'
         } else {
-          prompt += ',{"GPT_relevance_name":"relevance name",\n' +
+          prompt += ',{"GPT_relevance_name":"name for the consequence in a problematic style",\n' +
             '"description": "description of the relevance reason",\n' +
             '}\n'
         }
@@ -308,12 +308,12 @@ class PromptBuilder {
     prompt += '{\n' + '"items": [\n'
     for (let i = 0; i < numberOfItems; i++) {
       if (i === 0) {
-        prompt += '{"GPT_item_name":"item name",\n' +
+        prompt += '{"GPT_item_name":"name for item in a problematic style",\n' +
           '"excerpt": "[Excerpt from the provided text that justifies the item]",\n' +
           '"description": "description of the item reason",\n' +
           '}'
       } else {
-        prompt += '{"GPT_item_name":"item name",\n' +
+        prompt += '{"GPT_item_name":"name for item in a problematic style",\n' +
           '"excerpt": "[Excerpt from the provided text that justifies the item]",\n' +
           '"description": "description of the item reason",\n' +
           '}'
@@ -322,11 +322,11 @@ class PromptBuilder {
     if (chatGPTBasedAnswers) {
       for (let i = 0; i < numberOfItems; i++) {
         if (i === 0) {
-          prompt += '{"GPT_item_name":"item name",\n' +
+          prompt += '{"GPT_item_name":"name for item in a problematic style",\n' +
             '"description": "description of the item reason",\n' +
             '}\n'
         } else {
-          prompt += '{"GPT_item_name":"item name",\n' +
+          prompt += '{"GPT_item_name":"name for item in a problematic style",\n' +
             '"description": "description of the item reason",\n' +
             '}\n'
         }
@@ -358,13 +358,13 @@ class PromptBuilder {
     for (let i = 0; i < number; i++) {
       if (i === 0) {
         prompt += '{\n' +
-          '"cluster_name":"cluster_name",\n' +
+          '"cluster_name":"cluster name in a problematic style",\n' +
           '"description": "description of the cluster",\n' +
           '"clusteredItems": [a list of items with two keys as in the above answers, node_name and description of the node_name as it is in the above example]\n' +
           '}\n'
       } else {
         prompt += ',{\n' +
-          '"cluster_name":"cluster name, ",\n' +
+          '"cluster_name":"cluster name in a problematic style",\n' +
           '"description": "description of the cluster",\n' +
           '"clusteredItems": [a list of items with two keys as in the above answers, node_name and description of the node_name as it is in the above example]\n' +
           '}\n'
