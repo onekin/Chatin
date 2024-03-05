@@ -277,6 +277,7 @@ class MindmapManager {
       if (newNodes) {
         that.addAnswerClickManager()
         that.addQuestionClickManager()
+        that.addNewProblemAnalysisManager()
       }
     })
     let config = { childList: true, subtree: true }
@@ -284,6 +285,7 @@ class MindmapManager {
     // obs.observe(document, config)
     this.addAnswerClickManager()
     this.addQuestionClickManager()
+    that.addNewProblemAnalysisManager()
   }
 
   createCauseMappingNode (currentNode) {
@@ -323,7 +325,12 @@ class MindmapManager {
       if (missingItems.length > 0) {
         Alerts.showErrorToast(`Missing variables: ${missingItems}`)
       } else {
-        let parentId = currentNode.dataset.id
+        let parentId
+        if (currentNode.dataset) {
+          parentId = currentNode.dataset.id
+        } else {
+          parentId = currentNode.id
+        }
         // let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'CAUSE_MAPPING' }))
         MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}]).then(() => {
           // MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt}]).then(() => {
@@ -509,6 +516,19 @@ class MindmapManager {
       })
     })
   }
+  addNewProblemAnalysisManager () {
+    let that = this
+    let problemAnalysisNode = that.getProblemAnalysisNode()
+    let iconElement = problemAnalysisNode.getIconElement()
+    if (iconElement == null || iconElement.classList.contains('chatin_question')) return
+    iconElement.classList.add('chatin_question')
+    iconElement.style.removeProperty('pointer-events')
+    iconElement.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      that.createCauseMappingNode(problemAnalysisNode)
+    })
+  }
   getQuestionNodes () {
     // let questionRegExp = /^(WHICH|HOW|WHY).+\?$/i
     // let questionNodes = MindmapWrapper.getNodesByTextRegexp(questionRegExp)
@@ -518,6 +538,11 @@ class MindmapManager {
     let questionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(questionNodesColor)
     questionNodes = questionNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['magnifier'].mindmeisterName.replace(/:/g, '') || n.emojiIcon === IconsMap['magnifier'].mindmeisterName.replace(/:/g, '')) })
     return questionNodes
+  }
+  getProblemAnalysisNode () {
+    let nodes = MindmapWrapper.getNodesByText((TemplateNodes.PROBLEM_ANALYSIS))
+    if (nodes == null || nodes.length === 0) return // todo
+    return nodes[0]
   }
   getStyle () {
     let that = this
@@ -1078,14 +1103,20 @@ class MindmapManager {
     // todo
     let that = this
     Alerts.showLoadingWindow(`Loading...`)
+    let nodeID
+    if (uiNode.dataset) {
+      nodeID = uiNode.dataset.id
+    } else {
+      nodeID = uiNode.id
+    }
     this.parseMap().then(() => {
-      let issue = that._mindmapParser.getNodeById(uiNode.dataset.id)
-      that.onClickAnswerConsequenceMapping(uiNode, issue)
+      let issue = that._mindmapParser.getNodeById(nodeID)
+      that.onClickAnswerConsequenceMapping(issue)
     }).catch((error) => {
       Alerts.showErrorToast('An error occurred' + error)
     })
   }
-  onClickAnswerConsequenceMapping (uiNode, issue) {
+  onClickAnswerConsequenceMapping (issue) {
     let issueName = issue.text
     let question = ProcessQuestions.CONSEQUENCE_MAPPING
     question = question.replace('<problem>', issueName)

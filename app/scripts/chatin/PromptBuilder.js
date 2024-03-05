@@ -364,7 +364,7 @@ class PromptBuilder {
           '}\n'
       } else {
         prompt += ',{\n' +
-          '"cluster_name":"cluster_name",\n' +
+          '"cluster_name":"cluster name, ",\n' +
           '"description": "description of the cluster",\n' +
           '"clusteredItems": [a list of items with two keys as in the above answers, node_name and description of the node_name as it is in the above example]\n' +
           '}\n'
