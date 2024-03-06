@@ -146,6 +146,28 @@ class MindmapManager {
                           that.performQuestion(currentNode)
                         })
                       })
+                    } else if (that.isGoodnessCriteriaNode(currentNode)) {
+                      that.parseMap().then(() => {
+                        const h1Element = document.createElement('h2')
+                        h1Element.style.position = 'absolute'
+                        h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                        h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
+                        h1Element.textContent = 'more...'
+                        h1Element.style.color = 'rgb(0, 170, 255)'
+                        h1Element.className = 'plusTitle'
+                        node.insertAdjacentElement('afterend', h1Element)
+                        h1Element.addEventListener('click', (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          that.createGoodnessCriteriaQuestionNode(currentNode)
+                        })
+                        // node.className = 'addCausesButton'
+                        node.addEventListener('click', (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          that.createGoodnessCriteriaQuestionNode(currentNode)
+                        })
+                      })
                     }
                     that.addObserverToAddButton()
                   } else if (style.position === 'absolute' && style.transformOrigin === 'center top') {
@@ -218,6 +240,28 @@ class MindmapManager {
                           that.addSiblingNode(that, nodeObject, 'questionNode')
                         })
                       })
+                    } else if (that.isGoodnessCriteriaNode(currentNode)) {
+                      /* that.parseMap().then(() => {
+                        let nodeObject = that._mindmapParser.getNodeById(currentNode.dataset.id)
+                        const h1Element = document.createElement('h2')
+                        h1Element.style.position = 'absolute'
+                        h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                        h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
+                        h1Element.textContent = 'add own goodness criteria'
+                        h1Element.style.color = 'rgb(0, 170, 255)'
+                        h1Element.className = 'plusTitleOwn'
+                        node.insertAdjacentElement('afterend', h1Element)
+                        h1Element.addEventListener('click', (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          that.addSiblingNode(that, nodeObject, 'goodnessCriteriaNode')
+                        })
+                        node.addEventListener('click', (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          that.addSiblingNode(that, nodeObject, 'goodnessCriteriaNode')
+                        })
+                      }) */
                     }
                   }
                 }
@@ -317,7 +361,7 @@ class MindmapManager {
       let items = MindmapManager.extractQuestionItems(question)
       let variables = that._variables
       let perceivedProblem
-      if (currentNode.innerText === 'PROBLEM ANALYSIS') {
+      if (currentNode._domElement && currentNode._domElement.innerText === 'PROBLEM ANALYSIS') {
         perceivedProblem = that._perceivedProblem
       } else {
         perceivedProblem = currentNode.innerText
@@ -348,6 +392,68 @@ class MindmapManager {
         let parentId
         if (currentNode.dataset) {
           parentId = currentNode.dataset.id
+        } else if (currentNode._domElement) {
+          parentId = currentNode._domElement.dataset.id
+        } else {
+          parentId = currentNode.id
+        }
+        // let modeChanges = that.modeEnableChanges(that._processModes.find((m) => { return m.name === 'CAUSE_MAPPING' }))
+        MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}]).then(() => {
+          // MindmeisterClient.doActions(that._mapId, [{text: question, parentId: parentId, style: PromptStyles.QuestionPrompt}]).then(() => {
+          let title = document.querySelectorAll('.plusTitle')
+          if (title) {
+            title.forEach((t) => {
+              t.remove()
+            })
+          }
+          let title2 = document.querySelectorAll('.plusTitleOwn')
+          if (title2) {
+            title2.forEach((t) => {
+              t.remove()
+            })
+          }
+          Alerts.closeLoadingWindow()
+        })
+      }
+    })
+  }
+  createGoodnessCriteriaQuestionNode (currentNode) {
+    let that = this
+    that.parseMap().then((mapInfo) => {
+      let question = ProcessQuestions.EXPERIMENTAL_QUESTION
+      let items = MindmapManager.extractQuestionItems(question)
+      let variables = that._variables
+      let perceivedProblem = that._perceivedProblem
+      let criteria = currentNode.innerText
+      items.forEach((i) => {
+        let v = variables.find((variable) => {
+          let variableName = variable.name.toLowerCase()
+          return variableName === i.toLowerCase()
+        })
+        if (v !== null && v !== undefined) {
+          question = question.replace(`<${i}>`, v.value)
+          _.remove(variables, v)
+        }
+      })
+      question = question.replace(`<Problem>`, perceivedProblem)
+      question = question.replace(`<Criteria>`, criteria)
+      if (variables.length > 0) {
+        console.log('Missing variables: ' + variables.map((v) => { return v.name }))
+        question = question.replace('?', ' ')
+        variables.forEach((v) => {
+          question = question + ' and assuming that ' + v.name + ' is ' + v.value
+        })
+        question = question + '?'
+      }
+      let missingItems = MindmapManager.extractQuestionItems(question)
+      if (missingItems.length > 0) {
+        Alerts.showErrorToast(`Missing variables: ${missingItems}`)
+      } else {
+        let parentId
+        if (currentNode.dataset) {
+          parentId = currentNode.dataset.id
+        } else if (currentNode._domElement) {
+          parentId = currentNode._domElement.dataset.id
         } else {
           parentId = currentNode.id
         }
@@ -434,7 +540,7 @@ class MindmapManager {
           // Create a duplicate of the div
           let aggregateButton = div.cloneNode(true)
           // Optionally, you can change the content or attributes of the duplicate
-          aggregateButton.textContent = 'Compact' // Changing the text content to 'Aggregate'
+          aggregateButton.textContent = 'Compact'
           aggregateButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
           // Insert the duplicate after the original div
           div.parentNode.insertBefore(aggregateButton, aggregateButton.nextSibling)
@@ -444,7 +550,7 @@ class MindmapManager {
               let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
               if (that.canBeAggregated(questionNodeObject)) {
                 Alerts.infoAlert({
-                  title: 'Aggregation',
+                  title: 'Compacting nodes',
                   text: 'This operation will remove relevant information within the aggregated nodes. Do you want to continue?',
                   showCancelButton: true,
                   confirmButtonText: 'Yes',
@@ -460,7 +566,7 @@ class MindmapManager {
           })
           let consensusButton = div.cloneNode(true)
           // Optionally, you can change the content or attributes of the duplicate
-          consensusButton.textContent = 'Consensus' // Changing the text content to 'Aggregate'
+          consensusButton.textContent = 'Consensus'
           consensusButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
           // Insert the duplicate after the original div
           div.parentNode.insertBefore(consensusButton, div.nextSibling)
@@ -479,7 +585,7 @@ class MindmapManager {
           if (that.isAnswerNode(questionNode)) {
             let consensusButton = div.cloneNode(true)
             // Optionally, you can change the content or attributes of the duplicate
-            consensusButton.textContent = 'Consensus' // Changing the text content to 'Aggregate'
+            consensusButton.textContent = 'Consensus'
             consensusButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
             // Insert the duplicate after the original div
             div.parentNode.insertBefore(consensusButton, div.nextSibling)
@@ -500,7 +606,7 @@ class MindmapManager {
             })
             let narrativeButton = div.cloneNode(true)
             // Optionally, you can change the content or attributes of the duplicate
-            narrativeButton.textContent = 'Narrative' // Changing the text content to 'Aggregate'
+            narrativeButton.textContent = 'Summarize' // Changing the text content to 'Aggregate'
             narrativeButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
             // Insert the duplicate after the original div
             div.parentNode.insertBefore(narrativeButton, div.nextSibling)
@@ -591,6 +697,9 @@ class MindmapManager {
     let that = this
     this.parseMap().then(() => {
       let questionNode, nodeId
+      if (node._domElement) {
+        node = node._domElement
+      }
       if (node.dataset) {
         questionNode = that._mindmapParser.getNodeById(node.dataset.id)
         nodeId = node.dataset.id
@@ -598,22 +707,21 @@ class MindmapManager {
         questionNode = that._mindmapParser.getNodeById(node.id)
         nodeId = node.id
       }
+      let question = questionNode._info.title
       let gptBasedNodes = questionNode.children.filter((c) => { return c._info.style === 'FFFFFF,100,0,0,2BD9D9,1,' })
       let prompt
       if (gptBasedNodes.length > 0) {
-        prompt = PromptBuilder.getPromptForGPTAlternativeNodes(this, node.text, gptBasedNodes)
+        prompt = PromptBuilder.getPromptForGPTAlternativeNodes(this, question, gptBasedNodes)
       } else {
-        prompt = PromptBuilder.getPromptForGPTNodes(this, node.text)
+        prompt = PromptBuilder.getPromptForGPTNodes(this, question)
       }
       let title = null
       let note = ''
-      if (!questionNode._info.title.startsWith('WHICH')) {
-        const parent = that._mindmapParser.getNodeById(questionNode._info.parent)
-        if (parent._info.note) {
-          note = parent._info.note.replaceAll('\n', ' ')
-        }
-        title = parent._info.title.replaceAll('\n', ' ')
+      const parent = that._mindmapParser.getNodeById(questionNode._info.parent)
+      if (parent._info.note) {
+        note = parent._info.note.replaceAll('\n', ' ')
       }
+      title = parent._info.title.replaceAll('\n', ' ')
       if (note !== '') {
         prompt = title + ' means that ' + note + '\n Based on that,' + prompt
       }
@@ -634,18 +742,30 @@ class MindmapManager {
               let labels, nodes
               // GPT Answers
               const gptProblemsLabels = gptItemsNodes.map((c) => { return c.label })
-              let gptProblemsNodes = gptItemsNodes.map((c) => {
-                return {
-                  text: c.label,
-                  style: PromptStyles.AnswerItem,
-                  image: IconsMap['tick-disabled'],
-                  parentId: nodeId,
-                  note: c.description
-                }
-              })
+              let gptProblemsNodes
+              if (!that.isInProblemSpace(that, questionNode)) {
+                gptProblemsNodes = gptItemsNodes.map((c) => {
+                  return {
+                    text: c.label,
+                    style: PromptStyles.AnswerItem,
+                    image: IconsMap['tick-disabled'],
+                    parentId: nodeId,
+                    note: c.description
+                  }
+                })
+              } else {
+                gptProblemsNodes = gptItemsNodes.map((c) => {
+                  return {
+                    text: c.label,
+                    style: PromptStyles.GoodnessCriteriaItem,
+                    parentId: nodeId,
+                    note: c.description
+                  }
+                })
+              }
               labels = gptProblemsLabels
               nodes = gptProblemsNodes
-              if (questionNode._info.title.startsWith('WHICH')) {
+              if (questionNode._info.title.startsWith('WHICH') && questionNode._info.title.includes('CONSEQUENCES')) {
                 let allProblems = that.getPreviousProblems(that, questionNode)
                 if (allProblems) {
                   let problems = allProblems.split(';')
@@ -800,6 +920,17 @@ class MindmapManager {
                       }
                       MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
                         Alerts.closeLoadingWindow()
+                        if (title) {
+                          title.forEach((t) => {
+                            t.remove()
+                          })
+                        }
+                        let title2 = document.querySelectorAll('.plusTitleOwn')
+                        if (title2) {
+                          title2.forEach((t) => {
+                            t.remove()
+                          })
+                        }
                       })
                     }
                     LLMClient.pdfBasedQuestion({
@@ -939,13 +1070,17 @@ class MindmapManager {
                     MindmeisterClient.removeNodes(that._mapId, removeNodes).then(() => {
                       MindmeisterClient.addNodes(that._mapId, nodes).then(() => {
                         Alerts.closeLoadingWindow()
-                        if (this._processModes[0].enabled) {
-                          let repeatedItems = labels.filter(label => that._problems.includes(label))
-                          if (repeatedItems.length === 1) {
-                            Alerts.showErrorToast(`The problem "${repeatedItems[0]}" is already in the mind map. It is a sign that the scope is already narrowing down`)
-                          } else if (repeatedItems.length > 1) {
-                            Alerts.showErrorToast('The problem ' + repeatedItems.join(', ') + ' are already in the map. It is a sign that the scope is already narrowing down')
-                          }
+                        let title = document.querySelectorAll('.plusTitle')
+                        if (title) {
+                          title.forEach((t) => {
+                            t.remove()
+                          })
+                        }
+                        let title2 = document.querySelectorAll('.plusTitleOwn')
+                        if (title2) {
+                          title2.forEach((t) => {
+                            t.remove()
+                          })
                         }
                       })
                     })
@@ -1044,15 +1179,37 @@ class MindmapManager {
   }
   onClickIconAnswer (uiNode) {
     // todo
+    Alerts.showLoadingWindow(`Loading...`)
     let that = this
     let icon = uiNode.getIconElement()
     let iconStyle = icon.getAttribute('aria-label')
-    if (iconStyle.includes('white_check_mark')) {
-      that.changeToAnswerNode(uiNode)
-    } else {
-      that.changeToAddressedProblemNode(uiNode)
+    if (uiNode._domElement) {
+      uiNode = uiNode._domElement
     }
-    Alerts.showLoadingWindow(`Loading...`)
+    that.parseMap().then(() => {
+      let nodeObject = that._mindmapParser.getNodeById(uiNode.dataset.id)
+      let parent = that._mindmapParser.getNodeById(nodeObject._info.parent)
+      let goodnessCriteriaNodes = this._mindmapParser.getNodesWithText(TemplateNodes.GOODNESS_CRITERIA)
+      if (goodnessCriteriaNodes == null || goodnessCriteriaNodes.length === 0) return // todo
+      let goodnessCriteriaNode = goodnessCriteriaNodes[0]
+      if (parent._info.title.startsWith('WHICH')) {
+        console.log('that.consequenceToGoodnessCriteria(uiNode)')
+        that.consequencesToGoodnessCriteria(nodeObject, goodnessCriteriaNode)
+      } else {
+        if (iconStyle.includes('white_check_mark')) {
+          that.changeToAnswerNode(uiNode)
+          Alerts.closeLoadingWindow()
+        } else {
+          let currentAddressedProblem = that.getCurrentAddressedProblem()
+          that.changeToAddressedProblemNode(uiNode, () => {
+            if (currentAddressedProblem) {
+              that.changeToAnswerNode(currentAddressedProblem)
+            }
+            Alerts.closeLoadingWindow()
+          })
+        }
+      }
+    })
   }
   addSiblingNode (that, node, type) {
     // let that = this
@@ -1063,13 +1220,13 @@ class MindmapManager {
       })
     } else if (type === 'causeNode') {
       MindmeisterClient.doActions(that._mapId,
-        [{text: '<add your cause>', parentId: nodeId, style: PromptStyles.AnswerItem, image: IconsMap['tick-disabled']}]
+        [{text: '<add your cause>', parentId: nodeId, style: PromptStyles.UserAnswerItem, image: IconsMap['tick-disabled']}]
       ).then(() => {
         Alerts.closeLoadingWindow()
       })
     } else if (type === 'consequenceNode') {
       MindmeisterClient.doActions(that._mapId,
-        [{text: '<add your consequence>', parentId: nodeId, style: PromptStyles.AnswerItem, image: IconsMap['tick-disabled']}]
+        [{text: '<add your consequence>', parentId: nodeId, style: PromptStyles.UserAnswerItem, image: IconsMap['tick-disabled']}]
       ).then(() => {
         Alerts.closeLoadingWindow()
       })
@@ -1092,20 +1249,32 @@ class MindmapManager {
             t.remove()
           })
         }
+        let title2 = document.querySelectorAll('.plusTitleOwn')
+        if (title2) {
+          title2.forEach((t) => {
+            t.remove()
+          })
+        }
       })
     }).catch((error) => {
       Alerts.showErrorToast('An error occurred' + error)
     })
   }
-  changeToAddressedProblemNode (uiNode) {
+  changeToAddressedProblemNode (uiNode, callback) {
     // todo
     Alerts.showLoadingWindow(`Loading...`)
+    let uiNodeID
+    if (uiNode.dataset) {
+      uiNodeID = uiNode.dataset.id
+    } else {
+      uiNodeID = uiNode.id
+    }
     this.parseMap().then(() => {
       // let issue = that._mindmapParser.getNodeById(uiNode.id)
       MindmeisterClient.doActions(this._mapId,
         [],
         // [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt}],
-        [{id: uiNode.id, style: PromptStyles.AddressedProblems, image: IconsMap['tick-enabled']}]
+        [{id: uiNodeID, style: PromptStyles.AddressedProblems, image: IconsMap['tick-enabled']}]
       ).then(() => {
         Alerts.closeLoadingWindow()
         let title = document.querySelectorAll('.plusTitle')
@@ -1114,6 +1283,48 @@ class MindmapManager {
             t.remove()
           })
         }
+        let title2 = document.querySelectorAll('.plusTitleOwn')
+        if (title2) {
+          title2.forEach((t) => {
+            t.remove()
+          })
+        }
+        if (callback) {
+          callback()
+        }
+      })
+    }).catch((error) => {
+      Alerts.showErrorToast('An error occurred' + error)
+    })
+  }
+  consequencesToGoodnessCriteria (nodeObject, goodnessCriteriaNode) {
+    // todo
+    Alerts.showLoadingWindow(`Loading...`)
+    this.parseMap().then(() => {
+      let note = ''
+      if (nodeObject._info.note) {
+        note = nodeObject._info.note
+      }
+      MindmeisterClient.doActions(this._mapId,
+        [{text: nodeObject._info.title, note: note, parentId: goodnessCriteriaNode._info.id, style: PromptStyles.GoodnessCriteriaItem}]
+      ).then(() => {
+        Alerts.showAlertToast('Goodness criteria added')
+        let title = document.querySelectorAll('.plusTitle')
+        if (title) {
+          title.forEach((t) => {
+            t.remove()
+          })
+        }
+        let title2 = document.querySelectorAll('.plusTitleOwn')
+        if (title2) {
+          title2.forEach((t) => {
+            t.remove()
+          })
+        }
+        let interval = setInterval(() => {
+          clearInterval(interval)
+          Alerts.closeLoadingWindow()
+        }, 1500)
       })
     }).catch((error) => {
       Alerts.showErrorToast('An error occurred' + error)
@@ -1162,9 +1373,7 @@ class MindmapManager {
     } else {
       let nodeId = issue.nodeId || issue._info.id
       MindmeisterClient.doActions(this._mapId,
-        [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}],
-        // [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt}],
-        [{id: nodeId, image: IconsMap['tick-enabled']}]
+        [{text: question, parentId: nodeId, style: PromptStyles.QuestionPrompt, image: IconsMap.magnifier}]
       ).then(() => {
         Alerts.closeLoadingWindow()
         let title = document.querySelectorAll('.plusTitle')
@@ -1189,13 +1398,25 @@ class MindmapManager {
     let pdfBasedAnswerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItemPDFBased.backgroundColor)
     let addressedProblemsColor = Utils.hexToRgb(PromptStyles.AddressedProblems.backgroundColor)
     let aggregatedAnswerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItemAggregation.backgroundColor)
+    let userAnswerColor = Utils.hexToRgb(PromptStyles.UserAnswerItem.backgroundColor)
     let questionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(answerNodesColor)
     let pdfBasedQuestionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(pdfBasedAnswerNodesColor)
     let aggregatedAnswerNodes = MindmapWrapper.getNodesByRGBBackgroundColor(aggregatedAnswerNodesColor)
     let addressedProblemsNodes = MindmapWrapper.getNodesByRGBBackgroundColor(addressedProblemsColor)
-    questionNodes = questionNodes.concat(pdfBasedQuestionNodes).concat(aggregatedAnswerNodes).concat(addressedProblemsNodes)
+    let userAnswerNodes = MindmapWrapper.getNodesByRGBBackgroundColor(userAnswerColor)
+    questionNodes = questionNodes.concat(pdfBasedQuestionNodes).concat(aggregatedAnswerNodes).concat(addressedProblemsNodes).concat(userAnswerNodes)
     questionNodes = questionNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g, '') || n.emojiIcon === IconsMap['tick-disabled'].mindmeisterName.replace(/:/g, '')) })
     return questionNodes
+  }
+  getCurrentAddressedProblem () {
+    let addressedProblemsColor = Utils.hexToRgb(PromptStyles.AddressedProblems.backgroundColor)
+    let addressedProblemsNodes = MindmapWrapper.getNodesByRGBBackgroundColor(addressedProblemsColor)
+    let currentAddressedProblemNode = addressedProblemsNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g, '') || n.emojiIcon === IconsMap['tick-disabled'].mindmeisterName.replace(/:/g, '')) })
+    if (currentAddressedProblemNode.length > 0) {
+      return currentAddressedProblemNode[0]
+    } else {
+      return null
+    }
   }
   /**
    * Mind map parsing
@@ -1420,7 +1641,7 @@ class MindmapManager {
     }
   }
   isAnswerNode (questionNode) {
-    if (questionNode.style.backgroundColor === 'rgb(150, 219, 11)' || questionNode.style.backgroundColor === 'rgb(43, 217, 217)' || questionNode.style.backgroundColor === 'rgb(0, 100, 0)' || questionNode.style.backgroundColor === 'rgb(194, 24, 7)') {
+    if (questionNode.style.backgroundColor === 'rgb(150, 219, 11)' || questionNode.style.backgroundColor === 'rgb(0, 192, 0)' || questionNode.style.backgroundColor === 'rgb(0, 128, 0)' || questionNode.style.backgroundColor === 'rgb(194, 24, 7)' || questionNode.style.backgroundColor === 'rgb(248, 230, 157)') {
       return true
     } else {
       return false
@@ -1432,6 +1653,24 @@ class MindmapManager {
     } else {
       return false
     }
+  }
+  isGoodnessCriteriaNode (questionNode) {
+    if (questionNode.style.backgroundColor === 'rgb(0, 170, 255)') {
+      return true
+    } else {
+      return false
+    }
+  }
+  isInProblemSpace (that, questionNode) {
+    let parent = that._mindmapParser.getNodeById(questionNode._info.parent)
+    while (parent !== null) {
+      if (parent._info.title === TemplateNodes.PROBLEM_SPACE) {
+        return true
+      } else {
+        parent = that._mindmapParser.getNodeById(parent._info.parent)
+      }
+    }
+    return false
   }
   canBeAggregated (questionNode) {
     const hasChildWithChildren = questionNode.children.some((child) => {

@@ -340,15 +340,21 @@ class PromptBuilder {
     // let that = this
     let prompt = 'QUESTION=[ ' + question + ']\n'
     for (let i = 0; i < nodes.length; i++) {
+      let description
+      if (nodes[i]._info.note) {
+        description = nodes[i]._info.note.trim().replaceAll('\n', ' ')
+      } else {
+        description = ' '
+      }
       if (i === 0) {
         prompt += 'ANSWERS= {\n' +
           'node_name":' + nodes[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + nodes[i]._info.note.trim().replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + description + ',\n' +
           '}'
       } else {
         prompt += ',{\n' +
           '"node_name":' + nodes[i]._info.title.replaceAll('\n', ' ') + ',\n' +
-          '"description": ' + nodes[i]._info.note.trim().replaceAll('\n', ' ') + ',\n' +
+          '"description": ' + description + ',\n' +
           '}\n'
       }
     }
