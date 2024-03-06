@@ -344,6 +344,7 @@ class MindmapManager {
         that.addAnswerClickManager()
         that.addQuestionClickManager()
         that.addNewProblemAnalysisManager()
+        that.addSummarizeButtonHandler()
       }
     })
     let config = { childList: true, subtree: true }
@@ -351,7 +352,8 @@ class MindmapManager {
     // obs.observe(document, config)
     this.addAnswerClickManager()
     this.addQuestionClickManager()
-    that.addNewProblemAnalysisManager()
+    this.addNewProblemAnalysisManager()
+    this.addSummarizeButtonHandler(rootNode)
   }
 
   createCauseMappingNode (currentNode) {
@@ -655,6 +657,19 @@ class MindmapManager {
       e.preventDefault()
       e.stopPropagation()
       that.createCauseMappingNode(problemAnalysisNode)
+    })
+  }
+  addSummarizeButtonHandler (rootNode) {
+    let that = this
+    let iconElement = rootNode.getIconElement()
+    if (iconElement == null || iconElement.classList.contains('chatin_question')) return
+    iconElement.classList.add('chatin_question')
+    iconElement.style.removeProperty('pointer-events')
+    iconElement.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      console.log('narrative')
+      let narrativeObject = that.getAllNarrative(that)
     })
   }
   getQuestionNodes () {
@@ -1736,6 +1751,87 @@ class MindmapManager {
       firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
     }
     return narrative
+  }
+  getAllNarrative (that, questionNode) {
+    // let question = questionNode._info.title.replaceAll('\n', ' ')
+    let narrative = {
+      question: '',
+      perceivedProblem: '',
+      practice: '',
+      activity: '',
+      person: '',
+      consequences: [],
+      causes: [],
+      addressedProblem: '',
+      goodnessCriteria: []
+    }
+    this.parseMap().then(() => {
+      if (that._perceivedProblem) {
+        narrative.perceivedProblem = that._perceivedProblem
+      }
+      if (narrative.perceivedProblem === '' || narrative.perceivedProblem.replaceAll('\n', ' ') === ModelDefaultValues.PerceivedProblem.initial) {
+        Alerts.showAlertToast('Perceived problem is not defined')
+        let interval = setInterval(() => {
+          clearInterval(interval)
+          Alerts.closeLoadingWindow()
+        }, 1500)
+      }
+      that._variables.forEach((v) => {
+        if (v.name === 'Practice') {
+          narrative.practice = v.value
+        } else if (v.name === 'Activity') {
+          narrative.activity = v.value
+        } else if (v.name === 'Person') {
+          narrative.person = v.value
+        }
+      })
+      if (narrative.practice === '' || narrative.practice === ModelDefaultValues.Practice.initial) {
+        Alerts.showAlertToast('Practice is not defined')
+        let interval = setInterval(() => {
+          clearInterval(interval)
+          Alerts.closeLoadingWindow()
+        }, 1500)
+      }
+      if (narrative.activity === '' || narrative.activity.replaceAll('\n', ' ') === ModelDefaultValues.Activity.initial) {
+        Alerts.showAlertToast('Activity is not defined')
+        let interval = setInterval(() => {
+          clearInterval(interval)
+          Alerts.closeLoadingWindow()
+        }, 1500)
+      }
+      if (narrative.person.replaceAll('\n', ' ') === ModelDefaultValues.Person.initial) {
+        narrative.person = ''
+      }
+      let addressedProblemNode = that.getCurrentAddressedProblem()
+      if (addressedProblemNode._domElement) {
+        narrative.addressedProblem = addressedProblemNode._domElement.dataset.id
+      } else {
+        Alerts.showAlertToast('You have to select one problem to address')
+        let interval = setInterval(() => {
+          clearInterval(interval)
+          Alerts.closeLoadingWindow()
+        }, 1500)
+      }
+      // getConsequences
+      let consequences = []
+      let addressedProblem = this._mindmapParser.getNodeById(narrative.addressedProblem)
+      if (addressedProblem == null) return
+      let consequenceNodes = addressedProblem.children
+      consequenceNodes.forEach((c) => {
+        c.forEach((consequence) => {
+          consequences.push(consequence._info.id)
+        })
+      })
+      // getGoodnessCriteria
+      let goodnessCriteria = []
+      consequenceNodes.forEach((c) => {
+        c.forEach((consequence) => {
+          goodnessCriteria.push(consequence._info.id)
+        })
+      })
+      // getCauses
+      return narrative
+    })
   }
   getPreviousProblems (that, questionNode) {
     let problems = ''
