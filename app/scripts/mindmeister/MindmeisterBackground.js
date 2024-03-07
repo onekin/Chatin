@@ -663,24 +663,28 @@ class MindmeisterBackground {
   doActions (mapId, insertions = [], updates = [], deletions = []) {
     let that = this
     return new Promise((resolve, reject) => {
-      let changeList = new ChangeList()
-      updates.forEach((n) => {
-        if (n.image != null && !changeList.hasImage(n.image)) changeList.addImage(n.image)
-      })
-      insertions.forEach((n) => {
-        if (n.image != null && !changeList.hasImage(n.image)) changeList.addImage(n.image)
-      })
-      this.uploadNeccesaryImagesForChangeList(mapId, changeList).then(() => {
-        insertions.forEach((n) => {
-          this.addNodeToChangeList(changeList, mapId, n)
-        })
+      try {
+        let changeList = new ChangeList()
         updates.forEach((n) => {
-          this.modifyNodeToChangeList(changeList, mapId, n)
+          if (n.image != null && !changeList.hasImage(n.image)) changeList.addImage(n.image)
         })
-        that.doChanges(mapId, changeList.changes).then(() => {
-          resolve('ok')
+        insertions.forEach((n) => {
+          if (n.image != null && !changeList.hasImage(n.image)) changeList.addImage(n.image)
         })
-      })
+        this.uploadNeccesaryImagesForChangeList(mapId, changeList).then(() => {
+          insertions.forEach((n) => {
+            this.addNodeToChangeList(changeList, mapId, n)
+          })
+          updates.forEach((n) => {
+            this.modifyNodeToChangeList(changeList, mapId, n)
+          })
+          that.doChanges(mapId, changeList.changes).then(() => {
+            resolve('ok')
+          })
+        })
+      } catch (e) {
+        reject(e)
+      }
     })
   }
 

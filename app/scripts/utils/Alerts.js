@@ -105,7 +105,7 @@ class Alerts {
       }).then((result) => {
         if (result.value) {
           if (_.isFunction(callback)) {
-            callback(null, result.value)
+            // callback(null, result.value)
           }
         } else {
           navigator.clipboard.writeText(text)
