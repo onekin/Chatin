@@ -379,36 +379,62 @@ class PromptBuilder {
     prompt += ',\n]\n' + '}\n'
     return prompt
   }
-  static getPromptForNarrativeLines (question, narrative, variables) {
+  static getPromptForNarrativeLines (narrative, parser) {
     // let that = this
     let numberOfLines = 0
-    let practice = variables.find((v) => { return v.name === 'Practice' }).value
-    let activity = variables.find((v) => { return v.name === 'Activity' }).value
-    let prompt = 'I want you to behave as an academic. Next I will provide you with a RESEARCH QUESTION and a set of text chunks that provide the CONTEXT where the Research Question aroses. I want you to provide a coherent narrative that ends up in the question Research Question\n'
-    prompt += 'RESEARCH QUESTION=[ ' + narrative.question + ']\n'
-    if (narrative.problem) {
-      let problems = narrative.problem.split(';')
-      problems.pop()
-      let currentProblem = problems.pop().split(':')
-      numberOfLines += 2
-      prompt += 'CONTEXT=[ One of the problems that arise during  ' + activity + ' in ' + practice + ' is  ' + currentProblem[0] + ', which means that ' + currentProblem[1] + '.\n'
-      while (problems.length > 0) {
-        let followingProblem = problems.pop().split(':')
-        numberOfLines += 2
-        prompt += currentProblem[0] + ' occurs because ' + followingProblem[0] + ', which means that ' + followingProblem[1] + '\n'
-        currentProblem = followingProblem
-      }
+    let prompt = 'I want you to behave as an academic. Next I will provide you with a RESEARCH QUESTION and a set of text chunks that provide the CONTEXT where the Research Question arises. I want you to provide a coherent narrative that ends up in the question Research Question\n'
+    let addressedProblem = parser.getNodeById(narrative.addressedProblem)
+    let question = 'HOW CAN ' + narrative.perceivedProblem + ' THAT OCCURS BECAUSE ' + addressedProblem._info.title + ' BE ADDRESSED DURING' + narrative.activity + 'IN' + narrative.practice
+    if (narrative.person !== '') {
+      question += ' ASSUMING THAT THE STAKEHOLDER IS ' + narrative.person
     }
-    if (narrative.relevance) {
-      let relevances = narrative.relevance.split(';')
-      relevances.pop()
-      let currentRelevance = relevances.pop().split(':')
-      numberOfLines += 2
-      prompt += 'This problem is relevant because ' + currentRelevance[0] + ' which means that ' + currentRelevance[1] + '.\n'
-      while (relevances.length > 0) {
-        currentRelevance = relevances.pop().split(':')
-        prompt += 'It is also relevant because ' + currentRelevance[0] + ', which means that ' + currentRelevance[1] + '\n'
+    question += '?'
+    prompt += 'RESEARCH QUESTION=[ ' + question + ']\n'
+    if (narrative.perceivedProblem) {
+      prompt += 'CONTEXT=[ One of the perceived problems during' + narrative.activity + ' in ' + narrative.practice + ' is  ' + narrative.perceivedProblem + '.\n'
+    }
+    if (narrative.causes.length > 0) {
+      narrative.causes.forEach(cause => {
+        numberOfLines += 2
+        const currentCause = parser.getNodeById(cause)
+        prompt += 'This occurs because ' + currentCause._info.title
+        if (currentCause._info.note) {
+          prompt += ',which means that ' + currentCause._info.note + '.\n'
+        } else {
+          prompt += '.\n'
+        }
+      })
+    }
+    if (addressedProblem) {
+      prompt += 'Finally, this problem occurs because ' + addressedProblem._info.title
+      if (addressedProblem._info.note) {
+        prompt += ',which means that ' + addressedProblem._info.note + '.\n'
+      } else {
+        prompt += '.\n'
       }
+      numberOfLines += 2
+    }
+    if (narrative.consequences.length > 0) {
+      prompt += 'This problem is relevant because it has several consequences.'
+      narrative.consequences.forEach(consequence => {
+        numberOfLines += 2
+        const currentConsequence = parser.getNodeById(consequence)
+        prompt += addressedProblem._info.title + 'causes ' + currentConsequence._info.title
+        if (currentConsequence._info.note) {
+          prompt += ',which means that ' + currentConsequence._info.note + '.\n'
+        } else {
+          prompt += '.\n'
+        }
+      })
+    }
+    if (narrative.goodnessCriteria.length > 0) {
+      prompt += 'Finally, the goodness criteria for this are'
+      narrative.goodnessCriteria.forEach(goodnessCriteria => {
+        numberOfLines += 2
+        const currentCriteria = parser.getNodeById(goodnessCriteria)
+        prompt += ' ' + currentCriteria._info.title + ','
+      })
+      prompt += '.\n'
     }
     prompt += 'Please, provide a narrative that ends up in the Research Question. You have to provide the response in JSON format including the narrative in a "answer" item. The format should be as follows:\n]'
     prompt += '{\n' + '"narrative": "The narrative of the research question in ' + numberOfLines + ' lines "\n' + '}\n'

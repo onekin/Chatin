@@ -320,6 +320,7 @@ class MindmapManager {
       if (found) {
         resolve()
       } else {
+        Alerts.showErrorToast('This is not a Chatin map')
         reject(new Error('Template nodes not found in the map'))
       }
     })
@@ -441,6 +442,12 @@ class MindmapManager {
       })
       question = question.replace(`<Problem>`, perceivedProblem)
       question = question.replace(`<Criteria>`, criteria)
+      let addressedProblem = that.getCurrentAddressedProblem()
+      if (addressedProblem._domElement) {
+        question = question.replace(`<AddressedProblem>`, addressedProblem._domElement.innerText.replaceAll('\n', ' '))
+      } else {
+        question = question.replace(`<AddressedProblem>`, 'a problem')
+      }
       if (variables.length > 0) {
         console.log('Missing variables: ' + variables.map((v) => { return v.name }))
         question = question.replace('?', ' ')
@@ -669,7 +676,10 @@ class MindmapManager {
       e.preventDefault()
       e.stopPropagation()
       console.log('narrative')
-      let narrativeObject = that.getAllNarrative(that)
+      that.getAllNarrative(that, (narrativeObject, parser) => {
+        console.log(narrativeObject)
+        that.performAllNarrativeQuestion(parser, rootNode, narrativeObject)
+      })
     })
   }
   getQuestionNodes () {
@@ -1010,6 +1020,61 @@ class MindmapManager {
                   Alerts.closeLoadingWindow()
                 })
               })
+            }
+            Alerts.showNarrative({
+              title: 'Narrative',
+              text: json.narrative,
+              callback: callback
+            })
+          }
+          Alerts.showLoadingWindow('Waiting for ' + llm.charAt(0).toUpperCase() + llm.slice(1) + 's answer...')
+          LLMClient.simpleQuestion({
+            apiKey: apiKey,
+            prompt: prompt,
+            llm: llm,
+            callback: callback
+          })
+        } else {
+          Alerts.showErrorToast('No API key found ' + llm)
+        }
+      })
+    })
+  }
+  performAllNarrativeQuestion (parser, node, narrative) {
+    Alerts.showLoadingWindow(`Creating prompt...`)
+    console.log('narrative', narrative)
+    let prompt = PromptBuilder.getPromptForNarrativeLines(parser, narrative)
+    console.log(prompt)
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+      if (llm === '') {
+        llm = Config.default.defaultLLM
+      }
+      chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: llm }, ({ apiKey }) => {
+        if (apiKey !== null && apiKey !== '') {
+          let callback = (json) => {
+            Alerts.closeLoadingWindow()
+            console.log(json)
+            let callback = () => {
+              Alerts.showLoadingWindow(`Creating mind map node...`)
+              /* GPT Answers
+              let nodes = []
+              let RQAnswer =
+                {
+                  text: narrative.question,
+                  note: json.narrative,
+                  parentId: lastNode._info.parent
+                }
+              nodes.push(RQAnswer)
+              // let nodesToRemove = that.getNodesToRemove(lastNode)
+              // let questionNodeID = that.getCurrentNodeId()
+              let removeNodes = []
+              removeNodes.push({ id: lastNode._info.id })
+              MindmeisterClient.removeNodes(that._mapId, removeNodes).then(() => {
+                Alerts.closeLoadingWindow()
+                MindmeisterClient.addNode(that._mapId, nodes).then(() => {
+                  Alerts.closeLoadingWindow()
+                })
+              }) */
             }
             Alerts.showNarrative({
               title: 'Narrative',
@@ -1752,7 +1817,7 @@ class MindmapManager {
     }
     return narrative
   }
-  getAllNarrative (that, questionNode) {
+  getAllNarrative (that, callback) {
     // let question = questionNode._info.title.replaceAll('\n', ' ')
     let narrative = {
       question: '',
@@ -1774,6 +1839,7 @@ class MindmapManager {
         let interval = setInterval(() => {
           clearInterval(interval)
           Alerts.closeLoadingWindow()
+          return null
         }, 1500)
       }
       that._variables.forEach((v) => {
@@ -1790,6 +1856,7 @@ class MindmapManager {
         let interval = setInterval(() => {
           clearInterval(interval)
           Alerts.closeLoadingWindow()
+          return null
         }, 1500)
       }
       if (narrative.activity === '' || narrative.activity.replaceAll('\n', ' ') === ModelDefaultValues.Activity.initial) {
@@ -1797,40 +1864,98 @@ class MindmapManager {
         let interval = setInterval(() => {
           clearInterval(interval)
           Alerts.closeLoadingWindow()
+          return null
         }, 1500)
       }
       if (narrative.person.replaceAll('\n', ' ') === ModelDefaultValues.Person.initial) {
         narrative.person = ''
       }
-      let addressedProblemNode = that.getCurrentAddressedProblem()
-      if (addressedProblemNode._domElement) {
-        narrative.addressedProblem = addressedProblemNode._domElement.dataset.id
+      let addressedProblemElement = that.getCurrentAddressedProblem()
+      if (addressedProblemElement && addressedProblemElement._domElement) {
+        narrative.addressedProblem = addressedProblemElement._domElement.dataset.id
       } else {
         Alerts.showAlertToast('You have to select one problem to address')
         let interval = setInterval(() => {
           clearInterval(interval)
           Alerts.closeLoadingWindow()
+          return null
         }, 1500)
       }
       // getConsequences
-      let consequences = []
       let addressedProblem = this._mindmapParser.getNodeById(narrative.addressedProblem)
-      if (addressedProblem == null) return
-      let consequenceNodes = addressedProblem.children
-      consequenceNodes.forEach((c) => {
-        c.forEach((consequence) => {
-          consequences.push(consequence._info.id)
-        })
-      })
+      if (addressedProblem == null) {
+        Alerts.showAlertToast('You have to select one problem to address')
+        let interval = setInterval(() => {
+          clearInterval(interval)
+          Alerts.closeLoadingWindow()
+          return null
+        }, 1500)
+      } else {
+        if (addressedProblem.children && addressedProblem.children.length === 0) {
+          Alerts.showAlertToast('You do not have consequences for the addressed problem')
+          let interval = setInterval(() => {
+            clearInterval(interval)
+            Alerts.closeLoadingWindow()
+          }, 1500)
+        } else {
+          let consequenceNodesQuestion = addressedProblem.children[0]
+          if (consequenceNodesQuestion == null) {
+            Alerts.showAlertToast('You do not have consequences for the addressed problem')
+            let interval = setInterval(() => {
+              clearInterval(interval)
+              Alerts.closeLoadingWindow()
+            }, 1500)
+          } else {
+            if (consequenceNodesQuestion.children && consequenceNodesQuestion.children.length === 0) {
+              Alerts.showAlertToast('You do not have consequences for the addressed problem')
+              let interval = setInterval(() => {
+                clearInterval(interval)
+                Alerts.closeLoadingWindow()
+              }, 1500)
+            } else {
+              Array.from(consequenceNodesQuestion.children).forEach((c) => {
+                narrative.consequences.push(c._info.id)
+              })
+            }
+          }
+        }
+      }
       // getGoodnessCriteria
-      let goodnessCriteria = []
-      consequenceNodes.forEach((c) => {
-        c.forEach((consequence) => {
-          goodnessCriteria.push(consequence._info.id)
-        })
-      })
+      let goodnessCriteriaNodes = this._mindmapParser.getNodesWithText(TemplateNodes.GOODNESS_CRITERIA)
+      if (goodnessCriteriaNodes == null || goodnessCriteriaNodes.length === 0) {
+        Alerts.showAlertToast('No goodness criteria defined')
+        let interval = setInterval(() => {
+          clearInterval(interval)
+          Alerts.closeLoadingWindow()
+        }, 1500)
+      } else {
+        let goodnessCriteriaNode = goodnessCriteriaNodes[0]
+        let goodnessCriteriaNodeID = goodnessCriteriaNode._info.id
+        let goodnessCriteriaNodeDiv = this._mindmapParser.getNodeById(goodnessCriteriaNodeID)
+        if (goodnessCriteriaNodeDiv.children && goodnessCriteriaNodeDiv.children.length === 0) {
+          Alerts.showAlertToast('No goodness criteria defined')
+          let interval = setInterval(() => {
+            clearInterval(interval)
+            Alerts.closeLoadingWindow()
+          }, 1500)
+        } else {
+          let goodnessCriteria = goodnessCriteriaNodeDiv.children
+          goodnessCriteria.forEach((c) => {
+            narrative.goodnessCriteria.push(c._info.id)
+          })
+        }
+      }
       // getCauses
-      return narrative
+      if (addressedProblem) {
+        let allProblems = that.getPreviousProblemsID(that, addressedProblem)
+        if (allProblems) {
+          narrative.causes = allProblems
+        }
+        if (_.isFunction(callback)) {
+          // eslint-disable-next-line standard/no-callback-literal
+          callback(this._mindmapParser, narrative)
+        }
+      }
     })
   }
   getPreviousProblems (that, questionNode) {
@@ -1839,9 +1964,31 @@ class MindmapManager {
     while (firstChild._info.title !== TemplateNodes.PROBLEM_ANALYSIS) {
       let secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
       if (that.isQuestionType(secondChild, 'WHY DOES')) {
-        problems += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + firstChild._info.note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
+        let note = ''
+        if (firstChild._info.note) {
+          note = firstChild._info.note
+        }
+        problems += firstChild._info.title.replaceAll('\n', ' ').replaceAll(';', '') + ':' + note.replaceAll('\n', ' ').replaceAll(';', '') + ';'
       }
       firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
+      if (secondChild._info.title === TemplateNodes.PROBLEM_ANALYSIS) {
+        break
+      }
+    }
+    return problems
+  }
+  getPreviousProblemsID (that, questionNode) {
+    let problems = []
+    let firstChild = that._mindmapParser.getNodeById(questionNode._info.parent)
+    while (firstChild._info.title !== TemplateNodes.PROBLEM_ANALYSIS) {
+      let secondChild = that._mindmapParser.getNodeById(firstChild._info.parent)
+      if (that.isQuestionType(secondChild, 'WHY DOES')) {
+        problems.push(firstChild._info.id)
+      }
+      firstChild = that._mindmapParser.getNodeById(secondChild._info.parent)
+      if (secondChild._info.title === TemplateNodes.PROBLEM_ANALYSIS) {
+        return problems
+      }
     }
     return problems
   }
