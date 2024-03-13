@@ -2,7 +2,7 @@
 This extension enables Design Science Research through Mindmeister.
 This extension integrates Mindmeister with ChatGPT
 
-DOWNLOAD: [https://drive.google.com/file/d/1SQScEDJojk5mUt1kP7LRcmYeSsyJ83lE/view?usp=sharing](https://drive.google.com/file/d/1SQScEDJojk5mUt1kP7LRcmYeSsyJ83lE/view?usp=sharing)
+DOWNLOAD: [[https://drive.google.com/file/d/1SQScEDJojk5mUt1kP7LRcmYeSsyJ83lE/view?usp=sharing](https://drive.google.com/file/d/1SQScEDJojk5mUt1kP7LRcmYeSsyJ83lE/view?usp=sharing)](https://drive.google.com/file/d/1jRcCNqkqQKBTtk4FyemktE2pWKFzzvJQ/view?usp=sharing)
 # For End-users
 
 End users require a mindmeister account
