@@ -8,6 +8,9 @@ DOWNLOAD: https://drive.google.com/file/d/15yyt5cHznoK781-cKELG4vzhg0HHz1Nu/view
 End users require a mindmeister account
 
 # For developers
+Chatin in a web extensions, therefore, it follows a web extension architecture. The source code is developed with web development technology, mainly Node.js. In order to use webpack for turning the source code of Chatin into the final output that can run in a browser, we resort to gulp.
+
+it is necessary to use Node v10.24.1
 
 
 # For contributors
@@ -16,6 +19,7 @@ End users require a mindmeister account
 ## Installation
 
 	$ npm install
+	$ gulp default
 
 ## Usage
 
