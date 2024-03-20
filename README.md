@@ -1,46 +1,44 @@
-# Chatin
-A succinct summary of the artifact’s purpose, its target audience, and key features that distinguish it from similar artifacts.
+# CHATIN
+Overview of the software artifact, including its purpose and benefits.
 
-Chatin is a browser extension that enables problem analysis through MindMeister
-This extension enables Design Science Research through Mindmeister.
-This extension integrates Mindmeister with ChatGPT
-
-DOWNLOAD: https://drive.google.com/file/d/15yyt5cHznoK781-cKELG4vzhg0HHz1Nu/view?usp=sharing
-
-## Sources
 Díaz, O., Garmendia, X., Contell, J. P., & Pereira, J. (2023, May). Inquiry Frameworks for Research Question Scoping in DSR: A Realization for ChatGPT. In International Conference on Design Science Research in Information Systems and Technology (pp. 299-313). Cham: Springer Nature Switzerland.
 
-# Table of Contents
+# END-USERS MANUAL
+Overview of the software artifact, including its purpose and benefits.
+## Installation and Setup
+Step-by-step instructions for installing and setting up the software for use, including any necessary configurations.
+## Getting Started
+A quick-start guide to help new users begin using the software effectively.
+## Features and Functionality
+Detailed explanations of the software’s features, including how to use them in common scenarios.
+## Troubleshooting 
+Solutions to common problems and answers to frequently asked questions.
+## Support and Resources
+Information on where to find further help, including support forums, contact information, and links to additional resources.
 
 
+# DEVELOPERS MANUAL
+## Architecture Overview
 
+High-level overview of the software’s architecture, including its major components and how they interact.
+## Development Environment
+Instructions for setting up a development environment, including required tools, libraries, and configurations.
 
-# Getting Started
-End users require a mindmeister account
+## API Documentation
+Comprehensive guide to the artifact's API, including endpoints, parameters, and examples of requests and responses.
 
-### Installation from Chrome Web Store
+## Code Structure
+Explanation of the artifact’s code organization, highlighting key modules, classes, and interfaces.
 
-## Installation from Github
+## Building and Testing
+Guidelines for building the software from source, running tests, and contributing code that meets the project’s quality standards.
 
-# Usage
-End users require a mindmeister account
+## Contribution Guidelines
+Detailed instructions for contributing to the project, including coding conventions, the pull request process, and how contributions are reviewed.
 
-## Installation from Chrome Web Store
+## Roadmap and Future Plans
+Information on the project’s direction, upcoming features, and how developers can contribute to future development.
 
-## Installation from Github
-
-## Configuration
-
-# For developers
-Chatin in a web extensions, therefore, it follows a web extension architecture. The source code is developed with web development technology, mainly Node.js. In order to use webpack for turning the source code of Chatin into the final output that can run in a browser, we resort to gulp.
-
-it is necessary to use Node v10.24.1
-
-
-# For contributors
-
-
-## Installation
 
 	$ npm install
 	$ gulp default
