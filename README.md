@@ -1,11 +1,35 @@
 # Chatin
+A succinct summary of the artifact’s purpose, its target audience, and key features that distinguish it from similar artifacts.
+
+Chatin is a browser extension that enables problem analysis through MindMeister
 This extension enables Design Science Research through Mindmeister.
 This extension integrates Mindmeister with ChatGPT
 
 DOWNLOAD: https://drive.google.com/file/d/15yyt5cHznoK781-cKELG4vzhg0HHz1Nu/view?usp=sharing
-# For End-users
 
+## Sources
+Díaz, O., Garmendia, X., Contell, J. P., & Pereira, J. (2023, May). Inquiry Frameworks for Research Question Scoping in DSR: A Realization for ChatGPT. In International Conference on Design Science Research in Information Systems and Technology (pp. 299-313). Cham: Springer Nature Switzerland.
+
+# Table of Contents
+
+
+
+
+# Getting Started
 End users require a mindmeister account
+
+### Installation from Chrome Web Store
+
+## Installation from Github
+
+# Usage
+End users require a mindmeister account
+
+## Installation from Chrome Web Store
+
+## Installation from Github
+
+## Configuration
 
 # For developers
 Chatin in a web extensions, therefore, it follows a web extension architecture. The source code is developed with web development technology, mainly Node.js. In order to use webpack for turning the source code of Chatin into the final output that can run in a browser, we resort to gulp.
