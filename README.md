@@ -9,11 +9,58 @@ With Chatin, enhance your problem-solving process by integrating the speed of LL
 Díaz, O., Garmendia, X., Contell, J. P., & Pereira, J. (2023, May). Inquiry Frameworks for Research Question Scoping in DSR: A Realization for ChatGPT. In International Conference on Design Science Research in Information Systems and Technology (pp. 299-313). Cham: Springer Nature Switzerland.
 
 # END-USERS MANUAL
-Overview of the software artifact, including its purpose and benefits.
+Purpose: Chatin is a cutting-edge browser extension designed to guide the problem analysis in MindMeister. By harnessing the power of Large Language Models (LLMs), Chatin aims to explore the landscape of your initial problem perception and offer different insights and help for understand and conceptualize your problem.
+
+How It Works: Chatin adds a mind map template in MindMeister to start conceptualizing your problem. After defining your context, Chatin introduces the dynamic intelligence of LLMs to enrich your problem analysis by initiating a exploration of the domain through prompting. It transforms the initial, often vague, problem perceptions into clearly scoped challenges. Through an interactive process, Chatin helps you explore and refine your problem to maximize the chances of getting the a usefull solution for it! Although it lacks the veracity of literature review, it provides other benefits such as:
+
+- Efficiency: By integrating LLM insights directly into your MindMeister workflow, Chatin significantly reduces the time needed for literature reviews and data gathering.
+- Clarity: It clarifies the problem scoping process, helping you move from a broad understanding of issues to pinpointing specific actionable problems.
+- Enhanced Problem Solving: With the support of LLMs, you gain access to a wide range of knowledge and perspectives, enhancing creativity and depth in problem-solving.
+
 ## Installation and Setup
-Step-by-step instructions for installing and setting up the software for use, including any necessary configurations.
+You can follow these steps to get Chatin up and running
+
+### Step 1: Requirements
+Ensure your computer and you meet the minimum requirements for running Chatin.
+
+- Google Chrome browser
+- Mindmeister account. The free version allows you to create 3 maps at most.
+- LLM API key. Chatin allows you to interact with GPT and Claude, therefore, in order to use them ensure you have an OpenAI or Anthropic API key
+
+### Step 2: Install the Chatin Extension
+- Open your web browser and navigate to the Chatin extension page on the [[Browser Extension Store/Marketplace](https://chromewebstore.google.com/detail/chatin/ojgphilpbmgaclmomnhjbcmjmhdlcbbn)].
+- Click the "Add to Browser" or "Install" button to begin the installation process.
+- Once the installation is complete, you will see a Chatin icon appear in your browser’s toolbar. This indicates that Chatin is successfully installed.
+
+### Step 3: Setup
+Open Chatin's options panel. You can do it by right click in Chatin's browser’s toolbar icon.
+
+<img width="521" alt="Screenshot 2024-03-21 at 17 21 05 1" src="https://github.com/onekin/Chatin/assets/31988855/118f2ef8-0a34-4ba5-baff-75064f3f23c3">
+
+In this page, you have to complete the following information:
+
+1. Grant access to MindMeister
+2. Select your Large Language Model and include your API key
+3. Establish the number of answers you want to retrieve by each prompting
+
+<img width="750" alt="Screenshot 2024-03-21 at 17 33 04" src="https://github.com/onekin/Chatin/assets/31988855/76b378d3-2036-48d5-b5d5-a10867bb6cc3">
+
+Finally, Check if the Chatin template appears in MindMeister.
+
+<img width="1067" alt="Screenshot 2024-03-21 at 17 38 00" src="https://github.com/onekin/Chatin/assets/31988855/09f7e556-9def-461f-aaac-f13a28434e79">
+
 ## Getting Started
-A quick-start guide to help new users begin using the software effectively.
+You can create a Chatin mind map clicking on its template. Once you click there, an empty Chatin map is displayed:
+
+<img width="1466" alt="Screenshot 2024-03-21 at 17 44 07" src="https://github.com/onekin/Chatin/assets/31988855/61406ea0-cc33-45ba-b42e-43a7461ae45e">
+
+First, you have to complete your problem space. To this aim, you have to complete the following nodes:
+- Perceived Problem:
+- Practice: Indicate which is the setting or context you want to address. An example can be “combating climate change”
+- Activity: Indicate one concrete task from the practice you want to research. An example of an activity within the practice of combating climate change could be “reduce the use of cars”.
+- Person [optional]: People that engage in the practice in which they perceive the problem
+- Optional variables: You can add extra variables adding new nodes in the Context node
+- 
 ## Features and Functionality
 Detailed explanations of the software’s features, including how to use them in common scenarios.
 ## Troubleshooting 
