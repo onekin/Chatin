@@ -1,6 +1,11 @@
 # CHATIN
-Overview of the software artifact, including its purpose and benefits.
+Chatin is a cutting-edge browser extension that brings the power of Large Language Models (LLMs) to MindMeister, making problem analysis easier and more intuitive. Understanding a problem isn't just about recognizing a gap; it's about exploring that gap from what you initially perceive to what you eventually aim to solve. This journey, known as 'problem scoping,' involves hypothesizing, testing, and evolving your understanding based on observations.
 
+Traditional methods like literature reviews are thorough but time-consuming. Chatin offers a swift alternative, leveraging LLMs to provide immediate, relevant insights directly into your MindMeister maps. It's designed for those initial stages of problem-solving where quick, informed guidance can pivot your direction towards more effective solutions.
+
+With Chatin, enhance your problem-solving process by integrating the speed of LLMs with the visual organization of MindMeister. Dive into problem analysis with an innovative tool that guides you from your first hunch to your final strategy.
+
+## References
 Díaz, O., Garmendia, X., Contell, J. P., & Pereira, J. (2023, May). Inquiry Frameworks for Research Question Scoping in DSR: A Realization for ChatGPT. In International Conference on Design Science Research in Information Systems and Technology (pp. 299-313). Cham: Springer Nature Switzerland.
 
 # END-USERS MANUAL
