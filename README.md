@@ -97,6 +97,14 @@ Remember that you can also modify the question nodes:
 You can complement Chatin Mind map with implicit knowledge. It provides the opportunity to attach PDFs in the question nodes to ask question based on these papers. This helps to get better results associated with the topic.
 <img width="1380" alt="Screenshot 2024-03-22 at 10 50 40" src="https://github.com/onekin/Chatin/assets/31988855/18c40480-fa3d-4b48-9944-00f5e4807c44">
 
+Note that nodes created asking from a PDF have a green light color. In addition to this, if you click on the node's note it includes the excerpt that justifies the creation of the node.
+
+<img width="731" alt="Screenshot 2024-03-22 at 11 32 38" src="https://github.com/onekin/Chatin/assets/31988855/fa75b9d5-fe26-4e54-b7fb-73d2c6e3941a">
+
+
+#### Select a problem to address
+
+
 
 ### Convergence
 
