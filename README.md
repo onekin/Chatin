@@ -9,8 +9,8 @@ With Chatin, enhance your problem-solving process by integrating the speed of LL
 Díaz, O., Garmendia, X., Contell, J. P., & Pereira, J. (2023, May). Inquiry Frameworks for Research Question Scoping in DSR: A Realization for ChatGPT. In International Conference on Design Science Research in Information Systems and Technology (pp. 299-313). Cham: Springer Nature Switzerland.
 
 ##### Table of Contents  
-[Headers](#headers)  
-[Emphasis](#emphasis)  
+[END-USERS MANUAL](#END-USERS MANUAL)  
+- [Installation and Setup](#Installation and Setup)  
 ...snip...    
 <a name="headers"/>
 ## Headers
