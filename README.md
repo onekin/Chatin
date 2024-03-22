@@ -12,7 +12,7 @@ Díaz, O., Garmendia, X., Contell, J. P., & Pereira, J. (2023, May). Inquiry Fra
 [END-USERS MANUAL](#END-USERS MANUAL)  
 - [Installation and Setup](#Installation and Setup)  
 ...snip...    
-<a name="headers"/>
+<a name="END-USERS MANUAL"/>
 ## Headers
 
 # END-USERS MANUAL
