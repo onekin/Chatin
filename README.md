@@ -103,22 +103,27 @@ Note that nodes created asking from a PDF have a green light color. In addition 
 
 
 #### Select a problem to address
+During the problem analysis you can select a problem to address. A problem can be selected clicking on the black tick.
+![addressProblem](https://github.com/onekin/Chatin/assets/31988855/dc0fad02-b90b-4254-97db-92a75ae44e19)
+Once you click on a problem, it is coloured in red and now, instead of searching for causes you can search for consequences in order to find goodness criteria. See next figure. Now the question is differente but the mechanisms is the same as with the causes exploration.
+![conse](https://github.com/onekin/Chatin/assets/31988855/33dd2e1b-6e04-496d-b838-9129b51414ab)
 
+If you ask the question, in the consequence mode the LLM will return the established number of answer + the previous causes of the addressed problem (see next figure).
+![consequences](https://github.com/onekin/Chatin/assets/31988855/f91587c3-1534-4aa5-ad63-7cf746a27006)
+
+Once you find an interesting consequence, you can add it as a Goodness Criteria to your problem space clicking on the black tick.
+![goodness](https://github.com/onekin/Chatin/assets/31988855/18a1fbbb-eb77-4676-a0e4-c7e6ecd57c5d)
+
+When you have the Goodness Criteria in the problem space you can explore how to measure it for future evaluations.
+
+![goodnessCriteria](https://github.com/onekin/Chatin/assets/31988855/e2573aab-e503-402d-8128-cf6bd9c16952)
 
 
 ### Convergence
+Chatin provides different functionalities to help you selecting a candidate problem.
 
+#### Node aggregration
 
-
-## Chatin's nodes
-During the problem analysis you will see that Chatin creates different nodes depending on the situation, this section summarizes the different options
-Solutions to common problems and answers to frequently asked questions.
-### Context nodes (light blue)
-### Question nodes (yellow)
-### Answer nodes from (green)
-### Answer nodes from LLM based on PDF (light green)
-### Compacted answer nodes (dark green)
-### Current addressed problem (red)
 
 
 ## Support and Resources
