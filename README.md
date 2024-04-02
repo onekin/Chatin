@@ -122,12 +122,24 @@ When you have the Goodness Criteria in the problem space you can explore how to 
 ### Convergence
 Chatin provides different functionalities to help you selecting a candidate problem.
 
-#### Node aggregration
+#### Compact nodes
+Chatin provides the opportunity to aggregate different nodes when there are a lot of options to simplify the map. You can click on a question node and select the compact option. Then, Chatin will ask you to select the number of clusters you want. Finally, once the number of nodes is selected, Chatin will replace the current nodes with the number of asked nodes.
 
+![compact](https://github.com/onekin/Chatin/assets/31988855/3d5781a6-4217-4f1f-b542-eac9a49bd683)
 
+The groups are colored in dark green and collect the previous nodes. You can check which nodes are gathered in each group checking the node note.
+
+#### Ask to Consensus
+Chatin provides you the opportunity to consult the question in Consensus in order to retrive associated literature. You can select a question node and select the Consensus option and the question will be asked in Consensus. You will be redirected to a page like this: https://consensus.app/results/?q=WHY%20DOES%20Narrow%20perspective%20OCCUR%20DURING%20problem%20analysis%20IN%20Design%20Science%20Research%20%20and%20assuming%20that%20Person%20is%20novel%20research%3F
+
+![consensus](https://github.com/onekin/Chatin/assets/31988855/4e98bad3-c357-4ee6-ae15-493b9073e4b6)
+
+It is also possible to use consensus in answer nodes. In this case, the question will ask for solutions for the given problem in the literature.
 
 ## Support and Resources
-Information on where to find further help, including support forums, contact information, and links to additional resources.
+You can ask support in the following mail: xabier.garmendiad@ehu.eus
+Here there is a video demo: https://youtu.be/lGInf5cqZ7Q?si=8Ks48PHibMiFXli9
+Here you can find some map examples created with Chatin: https://docs.google.com/document/d/1liPEni_1E7nwpLqcZN4sE_DnGSYGupJ7rqfIQaxQcYw/edit?usp=sharing
 
 
 # DEVELOPERS MANUAL
