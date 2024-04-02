@@ -137,9 +137,11 @@ Chatin provides you the opportunity to consult the question in Consensus in orde
 It is also possible to use consensus in answer nodes. In this case, the question will ask for solutions for the given problem in the literature.
 
 ## Support and Resources
-You can ask support in the following mail: xabier.garmendiad@ehu.eus
-Here there is a video demo: https://youtu.be/lGInf5cqZ7Q?si=8Ks48PHibMiFXli9
-Here you can find some map examples created with Chatin: https://docs.google.com/document/d/1liPEni_1E7nwpLqcZN4sE_DnGSYGupJ7rqfIQaxQcYw/edit?usp=sharing
+- You can ask support in the following mail: xabier.garmendiad@ehu.eus
+
+- Here there is a video demo: https://youtu.be/lGInf5cqZ7Q?si=8Ks48PHibMiFXli9
+
+- Here you can find some map examples created with Chatin: https://docs.google.com/document/d/1liPEni_1E7nwpLqcZN4sE_DnGSYGupJ7rqfIQaxQcYw/edit?usp=sharing
 
 
 # DEVELOPERS MANUAL
