@@ -143,28 +143,32 @@ It is also possible to use consensus in answer nodes. In this case, the question
 
 - Here you can find some map examples created with Chatin: https://docs.google.com/document/d/1liPEni_1E7nwpLqcZN4sE_DnGSYGupJ7rqfIQaxQcYw/edit?usp=sharing
 
+## Available LLMs
+- OpenAI. GPT4 and GPT3.5
+- Anthropic. Claude2.0
 
 # DEVELOPERS MANUAL
 ## Architecture Overview
+Chatin is a browser extension and it is developed with web development technologies: JavaScript, Node and Gulp.
+It is developed over the last Manifest version (Manifest version 3): https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3?hl=es-419
 
-High-level overview of the software’s architecture, including its major components and how they interact.
+The web extension follows the standard web browser extension architecture with content script modules to manage the web content and background scripts to manage the local storage, mindmeister and LLM communications.
+
 ## Development Environment
-Instructions for setting up a development environment, including required tools, libraries, and configurations.
+To develop from the source code, you will need to install node and gulp to build the extension. This are the required versions
+- Node v12.22
+- Gulp v4
 
 ## API Documentation
-Comprehensive guide to the artifact's API, including endpoints, parameters, and examples of requests and responses.
+Chatin makes use of differente APIs:
+- MindMeister API. Chatin uses this API to manage the maps: https://developers.mindmeister.com/
+  
+- LangChain. Chatin uses different LLM's API through the LangChain JS library: https://js.langchain.com/docs/get_started/introduction
 
 ## Code Structure
 Explanation of the artifact’s code organization, highlighting key modules, classes, and interfaces.
 
 ## Building and Testing
-Guidelines for building the software from source, running tests, and contributing code that meets the project’s quality standards.
-
-## Contribution Guidelines
-Detailed instructions for contributing to the project, including coding conventions, the pull request process, and how contributions are reviewed.
-
-## Roadmap and Future Plans
-Information on the project’s direction, upcoming features, and how developers can contribute to future development.
 
 
 	$ npm install
@@ -225,3 +229,9 @@ or
 The build tool also defines a variable named `process.env.NODE_ENV` in your scripts. It will be set to `development` unless you use the `--production` option.
 
 ## Testing
+
+## Contribution Guidelines
+Detailed instructions for contributing to the project, including coding conventions, the pull request process, and how contributions are reviewed.
+
+## Roadmap and Future Plans
+Information on the project’s direction, upcoming features, and how developers can contribute to future development.
