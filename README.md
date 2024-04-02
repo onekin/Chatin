@@ -168,6 +168,9 @@ Chatin makes use of differente APIs:
 ## Code Structure
 Explanation of the artifact’s code organization, highlighting key modules, classes, and interfaces.
 
+![chatin](https://github.com/onekin/Chatin/assets/31988855/ee3f42df-1472-433e-9b87-16dafccb80d7)
+
+
 ## Building and Testing
 
 
