@@ -57,7 +57,7 @@ You can create a Chatin mind map clicking on its template. Once you click there,
 <img width="1466" alt="Screenshot 2024-03-21 at 17 44 07" src="https://github.com/onekin/Chatin/assets/31988855/61406ea0-cc33-45ba-b42e-43a7461ae45e">
 
 First, you have to complete your problem space. To this aim, you have to complete the following nodes:
-- Perceived Problem:
+- Perceived Problem: Indicate which is the problem you perceived in the practice.
 - Practice: Indicate which is the setting or context you want to address. An example can be “combating climate change”
 - Activity: Indicate one concrete task from the practice you want to research. An example of an activity within the practice of combating climate change could be “reduce the use of cars”.
 - Person [optional]: People that engage in the practice in which they perceive the problem
