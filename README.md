@@ -130,7 +130,9 @@ Chatin provides the opportunity to aggregate different nodes when there are a lo
 The groups are colored in dark green and collect the previous nodes. You can check which nodes are gathered in each group checking the node note.
 
 #### Ask to Consensus
-Chatin provides you the opportunity to consult the question in Consensus in order to retrive associated literature. You can select a question node and select the Consensus option and the question will be asked in Consensus. You will be redirected to a page like this: https://consensus.app/results/?q=WHY%20DOES%20Narrow%20perspective%20OCCUR%20DURING%20problem%20analysis%20IN%20Design%20Science%20Research%20%20and%20assuming%20that%20Person%20is%20novel%20research%3F
+Chatin provides you the opportunity to consult the question in Consensus in order to retrive associated literature. You can select a question node and select the Consensus option and the question will be asked in Consensus. You will be redirected to a page like this:
+
+https://consensus.app/results/q=WHY%20DOES%20Narrow%20perspective%20OCCUR%20DURING%20problem%20analysis%20IN%20Design%20Science%20Research%20%20and%20assuming%20that%20Person%20is%20novel%20research%3F
 
 ![consensus](https://github.com/onekin/Chatin/assets/31988855/4e98bad3-c357-4ee6-ae15-493b9073e4b6)
 
