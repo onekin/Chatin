@@ -168,10 +168,15 @@ Chatin makes use of differente APIs:
 - LangChain. Chatin uses different LLM's API through the LangChain JS library: https://js.langchain.com/docs/get_started/introduction
 
 ## Code Structure
-Explanation of the artifact’s code organization, highlighting key modules, classes, and interfaces.
-
+The artifact code is organized as follows:
 ![chatin](https://github.com/onekin/Chatin/assets/31988855/ee3f42df-1472-433e-9b87-16dafccb80d7)
-
+These are the main components:
+- images. This folder contains the images within the browser extension.
+- pages. This folder contains the html files of the extension.
+- resources. This folder contains mind map templates and the pdf.js library to process pdfs.
+- scripts. This is the main component, it contains the scripts to make the extension work. Based on a web extension architecture this is the main classes:
+- - Content Script: content_script.js
+  - 
 
 ## Building and Testing
 
