@@ -175,11 +175,19 @@ These are the main components:
 - pages. This folder contains the html files of the extension.
 - resources. This folder contains mind map templates and the pdf.js library to process pdfs.
 - scripts. This is the main component, it contains the scripts to make the extension work. Based on a web extension architecture this is the main classes:
-- - Content Script: content_script.js
-  - 
-
+  - Content Script: content_script.js, this is the script that is executed when MindMeister is accessed
+  - Service worker: background.js, this script initializes all the background scripts to enable the communications
+  - Options file: options.js, this is the script executed when the option page is opened
+  - The rest of scripts are organized in the following folders.
+     	- chatin. This folder contains the scripts that are executed in MindMeister.
+    		- HomePageManager is executed in MindMeister home page to add the button to create a Chatin map.
+    		- MindmapManager is executed when opening a MindMeister map and it handles Chatin's functionality. This is the most important file.
+    		- The rest of the files in this folder are classes imported in the two above classes and define the Chatin model (e.g., node names, question templates, prompt styles...)
+  	- llm. The main class in this folder is LLMManager, which is executed at the background to establish the communications with Langchain for asking questions to a LLM and with the local storage to manage the variables from the Options page.
+     	- mindmeister. This folder contains the scripts to communicate with MindMeister API functionalities
+        - utils. This folder contains helper functions which are small pieces of reusable code designed to perform a specific task that supports larger code structures.
 ## Building and Testing
-
+To compile the project, you only need to execute the following lines, but make sure you have the node and gulp versions specified in the Development Enviroment section.
 
 	$ npm install
 	$ gulp default
