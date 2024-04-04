@@ -251,7 +251,7 @@ The build tool also defines a variable named `process.env.NODE_ENV` in your scri
 ## Testing
 
 ## Contribution Guidelines
-Detailed instructions for contributing to the project, including coding conventions, the pull request process, and how contributions are reviewed.
+To contribute please contact xabier.garmendiad@ehu.eus.
 
 ## Roadmap and Future Plans
-Information on the project’s direction, upcoming features, and how developers can contribute to future development.
+This project has been developed in a research setting. The aim is to explore the benefits of AI for problem analysis so future plans seek to evaluate the artifact in real settings
