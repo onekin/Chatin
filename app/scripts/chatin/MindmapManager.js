@@ -68,7 +68,7 @@ class MindmapManager {
                   if (!that.isAnswerNode(currentNode)) {
                     that.manageAttachmentsMenu(that, targetDiv)
                   }
-                } else if (node.innerText && (node.innerText.includes('Drag & drop files') || node.innerText.includes('Arrastra y suelta archivos o pega enlaces en los temas.'))) {
+                } else if (node.innerText && (node.innerText.includes('Auto align') || node.innerText.includes('Arrastra y suelta archivos o pega enlaces en los temas.'))) {
                   that.manageContextMenu(that)
                 } else if (node.classList && node.classList.contains('kr-view')) {
                   let style = node.style
@@ -495,61 +495,72 @@ class MindmapManager {
   }
   manageContextMenu (that) {
     document.querySelectorAll('div').forEach(function (div) {
-      const expectedStyle = 'width: 90px; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
-      if ((div.textContent.includes('Task') || div.textContent.includes('Tarea')) && div.getAttribute('style') === expectedStyle) {
-        let questionNode = that.getCurrentNode()
-        if (that.isQuestionNode(questionNode)) {
-          // Create a duplicate of the div
-          let aggregateButton = div.cloneNode(true)
-          // Optionally, you can change the content or attributes of the duplicate
-          aggregateButton.textContent = 'Compact'
-          aggregateButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
-          // Insert the duplicate after the original div
-          div.parentNode.insertBefore(aggregateButton, aggregateButton.nextSibling)
-          aggregateButton.addEventListener('click', function (event) {
-            that.parseMap().then(() => {
-              let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
-              if (that.canBeAggregated(questionNodeObject)) {
-                Alerts.infoAlert({
-                  title: 'Compacting nodes',
-                  text: 'This operation will remove relevant information within the aggregated nodes. Do you want to continue?',
-                  showCancelButton: true,
-                  confirmButtonText: 'Yes',
-                  cancelButtonText: 'No',
-                  callback: () => {
-                    that.performAggregationQuestion(questionNodeObject)
-                  }
-                })
-              } else {
-                that.performAggregationQuestion(questionNodeObject)
-              }
-            })
-          })
-          let consensusButton = div.cloneNode(true)
-          // Optionally, you can change the content or attributes of the duplicate
-          consensusButton.textContent = 'Consensus'
-          consensusButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
-          // Insert the duplicate after the original div
-          div.parentNode.insertBefore(consensusButton, div.nextSibling)
-          consensusButton.addEventListener('click', function (event) {
-            console.log('click on Consensus')
-            that.parseMap().then(() => {
-              let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
-              const nodeText = questionNodeObject._info.title.replaceAll('\n', ' ')
-              const encodedUri = encodeURIComponent(nodeText)
-              const uri = 'https://consensus.app/results/?q=' + encodedUri
-              window.open(uri)
-              console.log('click on Consensus')
-            })
-          })
-        } else {
-          if (that.isAnswerNode(questionNode)) {
-            let consensusButton = div.cloneNode(true)
-            // Optionally, you can change the content or attributes of the duplicate
-            consensusButton.textContent = 'Consensus'
-            consensusButton.style = 'width: 100%; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background-color: rgba(0, 0, 0, 0.05); cursor: pointer; transform: scaleX(1) scaleY(1);'
+      // Define the expected style value for '--rs-view-gap-s: 1;'
+      const expectedStyle = '--rs-view-gap-s: 1;'
+
+      // Define the class pattern for matching the class like 'position-module_--position-relative__{id}'
+      const classPattern = /^position-module_--position-relative__\w+$/
+
+      // Check if the div has the expected style and a matching class pattern
+      if (div.getAttribute('style') && div.getAttribute('style').includes(expectedStyle)) {
+        // Check if any of the div's classes match the pattern
+        const hasMatchingClass = Array.from(div.classList).some(className => classPattern.test(className))
+
+        // Check if the div has exactly 5 button children
+        const hasFiveButtons = div.querySelectorAll('button').length === 6
+        if (hasMatchingClass && hasFiveButtons) {
+          let questionNode = that.getCurrentNode()
+          if (that.isQuestionNode(questionNode)) {
             // Insert the duplicate after the original div
-            div.parentNode.insertBefore(consensusButton, div.nextSibling)
+            const aggregateButton = document.createElement('button')
+            aggregateButton.type = 'button'
+            // Set the text content for the button
+            aggregateButton.textContent = 'Compact'
+
+            div.appendChild(aggregateButton)
+            aggregateButton.addEventListener('click', function (event) {
+              that.parseMap().then(() => {
+                let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+                if (that.canBeAggregated(questionNodeObject)) {
+                  Alerts.infoAlert({
+                    title: 'Compacting nodes',
+                    text: 'This operation will remove relevant information within the aggregated nodes. Do you want to continue?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes',
+                    cancelButtonText: 'No',
+                    callback: () => {
+                      that.performAggregationQuestion(questionNodeObject)
+                    }
+                  })
+                } else {
+                  that.performAggregationQuestion(questionNodeObject)
+                }
+              })
+            })
+            // Insert the duplicate after the original div
+            const consensusButton = document.createElement('button')
+            consensusButton.type = 'button'
+            // Set the text content for the button
+            consensusButton.textContent = 'Consensus'
+            div.appendChild(consensusButton)
+            consensusButton.addEventListener('click', function (event) {
+              console.log('click on Consensus')
+              that.parseMap().then(() => {
+                let questionNodeObject = that._mindmapParser.getNodeById(questionNode.getAttribute('data-id'))
+                const nodeText = questionNodeObject._info.title.replaceAll('\n', ' ')
+                const encodedUri = encodeURIComponent(nodeText)
+                const uri = 'https://consensus.app/results/?q=' + encodedUri
+                window.open(uri)
+                console.log('click on Consensus')
+              })
+            })
+          } else if (that.isAnswerNode(questionNode)) {
+            // Insert the duplicate after the original div
+            const consensusButton = document.createElement('button')
+            consensusButton.type = 'button'
+            // Set the text content for the button
+            consensusButton.textContent = 'Consensus'
+            div.appendChild(consensusButton)
             consensusButton.addEventListener('click', function (event) {
               console.log('click on Consensus')
               that.parseMap().then(() => {
@@ -1605,7 +1616,7 @@ class MindmapManager {
     return targetElement
   }
   isQuestionNode (questionNode) {
-    let questionRegExp = /^(WHICH|HOW|WHY).+\?$/i
+    let questionRegExp = /^(WHICH|HOW|WHY).+\?.*$/i
     let question = questionNode.innerText.replaceAll('\n', ' ')
     if (questionRegExp.test(question)) {
       return true
