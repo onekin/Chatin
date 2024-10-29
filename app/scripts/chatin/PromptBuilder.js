@@ -415,13 +415,13 @@ class PromptBuilder {
       numberOfLines += 2
     }
     if (narrative.consequences.length > 0) {
-      prompt += 'This problem is relevant because it has several consequences.'
+      prompt += 'This problem is relevant because it has several consequences. '
       narrative.consequences.forEach(consequence => {
         numberOfLines += 2
         const currentConsequence = parser.getNodeById(consequence)
-        prompt += addressedProblem._info.title + 'causes ' + currentConsequence._info.title
+        prompt += addressedProblem._info.title + ' causes ' + currentConsequence._info.title
         if (currentConsequence._info.note) {
-          prompt += ',which means that ' + currentConsequence._info.note + '.\n'
+          prompt += ', which means that ' + currentConsequence._info.note + '.\n'
         } else {
           prompt += '.\n'
         }

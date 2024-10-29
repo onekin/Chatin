@@ -84,7 +84,7 @@ class MindmapManager {
                           if (parent._info.title.startsWith('WHICH') || that.isAddressProblemNode(currentNode)) {
                             const h1Element = document.createElement('h2')
                             h1Element.style.position = 'absolute'
-                            h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                            h1Element.style.top = `${parseInt(style.top, 10) - 4}px` // Subtract 30px from top
                             h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
                             h1Element.textContent = 'more consequences'
                             h1Element.style.color = 'rgb(0, 170, 255)'
@@ -104,7 +104,7 @@ class MindmapManager {
                           } else {
                             const h1Element = document.createElement('h2')
                             h1Element.style.position = 'absolute'
-                            h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                            h1Element.style.top = `${parseInt(style.top, 10) - 4}px` // Subtract 30px from top
                             h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
                             h1Element.textContent = 'more causes'
                             h1Element.style.color = 'rgb(0, 170, 255)'
@@ -124,7 +124,7 @@ class MindmapManager {
                         } else if (that.isQuestionNode(currentNode)) {
                           const h1Element = document.createElement('h2')
                           h1Element.style.position = 'absolute'
-                          h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                          h1Element.style.top = `${parseInt(style.top, 10) - 4}px` // Subtract 30px from top
                           h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
                           h1Element.textContent = 'ask question'
                           h1Element.style.color = 'rgb(0, 170, 255)'
@@ -144,7 +144,7 @@ class MindmapManager {
                         } else if (that.isGoodnessCriteriaNode(that, currentNode, nodeObject)) {
                           const h1Element = document.createElement('h2')
                           h1Element.style.position = 'absolute'
-                          h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                          h1Element.style.top = `${parseInt(style.top, 10) - 4}px` // Subtract 30px from top
                           h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
                           h1Element.textContent = 'more...'
                           h1Element.style.color = 'rgb(0, 170, 255)'
@@ -176,7 +176,7 @@ class MindmapManager {
                           if (parent._info.title.startsWith('WHICH') || that.isAddressProblemNode(currentNode)) {
                             const h1Element = document.createElement('h2')
                             h1Element.style.position = 'absolute'
-                            h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                            h1Element.style.top = `${parseInt(style.top, 10) + 4}px` // Subtract 30px from top
                             h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
                             // h1Element.textContent = 'add question'
                             h1Element.style.color = 'rgb(0, 170, 255)'
@@ -196,7 +196,7 @@ class MindmapManager {
                           } else {
                             const h1Element = document.createElement('h2')
                             h1Element.style.position = 'absolute'
-                            h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                            h1Element.style.top = `${parseInt(style.top, 10) + 4}px` // Subtract 30px from top
                             h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
                             h1Element.textContent = 'add own cause'
                             h1Element.style.color = 'rgb(0, 170, 255)'
@@ -217,7 +217,7 @@ class MindmapManager {
                           let nodeObject = that._mindmapParser.getNodeById(currentNode.dataset.id)
                           const h1Element = document.createElement('h2')
                           h1Element.style.position = 'absolute'
-                          h1Element.style.top = `${parseInt(style.top, 10) - 24}px` // Subtract 30px from top
+                          h1Element.style.top = `${parseInt(style.top, 10) + 4}px` // Subtract 30px from top
                           h1Element.style.left = `${parseInt(style.left, 10) + 42}px`
                           h1Element.textContent = 'add own question'
                           h1Element.style.color = 'rgb(0, 170, 255)'
