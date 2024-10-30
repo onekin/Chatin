@@ -483,7 +483,7 @@ class MindmapManager {
           let button = document.createElement('button')
           button.id = id
           button.className = 'chatin-attachment-button'
-          button.innerText = 'Ask GPT'
+          button.innerText = 'Ask LLM'
           button.addEventListener('click', function (event) {
             // You can handle the click event here.
             event.stopPropagation()
