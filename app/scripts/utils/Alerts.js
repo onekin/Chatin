@@ -181,7 +181,7 @@ class Alerts {
       html += '<label for="numberInput">Enter a number (less than ' + number + '): </label>'
       html += '<input type="number" id="numberInput" name="numberInput" value="' + numberInput + '" min="1" max="' + (number - 1) + '" ><br>'
       Alerts.multipleInputAlert({
-        title: 'How many nodes do you want to cluster?',
+        title: 'How many nodes do you </br></br> want to cluster?',
         html: html,
         // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
         preConfirm: () => {

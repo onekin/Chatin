@@ -11,6 +11,10 @@ const IconsMap = {
   'magnifier': {
     fileUrl: chrome.runtime.getURL('images/magnifier.png'),
     mindmeisterName: ':mag:'
+  },
+  'up': {
+    fileUrl: chrome.runtime.getURL('images/magnifier.png'),
+    mindmeisterName: ':up:'
   }
 }
 

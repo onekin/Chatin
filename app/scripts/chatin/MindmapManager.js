@@ -58,15 +58,19 @@ class MindmapManager {
                 const node = mutation.addedNodes[0]
                 if (node.innerText && (node.innerText.includes('Attachments') || node.innerText.includes('Archivos adjuntos'))) {
                   let currentNode = that.getCurrentNode()
-                  if (!that.isAnswerNode(currentNode)) {
-                    that.manageAttachmentsMenu(that, node)
+                  if (currentNode && that.isQuestionNode(currentNode)) {
+                    that.manageAttachmentsMenu(that, node, currentNode)
                   }
-                } else if (node.innerHTML && node.innerHTML.includes(Locators.PDF_ELEMENT) && node.innerHTML.includes('.pdf')) {
+                } else if (node && node.innerHTML && node.innerHTML.includes(Locators.PDF_ELEMENT) && node.innerHTML.includes('.pdf')) {
                   let divs = document.querySelectorAll('div.kr-view')
-                  let targetDiv = Array.from(divs).find(div => div.getAttribute('style').includes('padding-top: 10px; padding-bottom: 10px; width: 320px; background-color: rgb(255, 255, 255);'))
-                  let currentNode = that.getCurrentNode()
-                  if (!that.isAnswerNode(currentNode)) {
-                    that.manageAttachmentsMenu(that, targetDiv)
+                  let targetDiv = Array.from(divs).find(div => div.innerHTML.includes('Attachments'))
+                  if (targetDiv) { // Check if targetDiv was found
+                    let currentNode = that.getCurrentNode()
+                    if (currentNode && that.isQuestionNode(currentNode)) {
+                      that.manageAttachmentsMenu(that, targetDiv, currentNode)
+                    }
+                  } else {
+                    console.warn('No matching div found with the specified style attributes.')
                   }
                 } else if (node.innerText && (node.innerText.includes('Auto align') || node.innerText.includes('Arrastra y suelta archivos o pega enlaces en los temas.'))) {
                   that.manageContextMenu(that)
@@ -316,6 +320,7 @@ class MindmapManager {
       })
       if (newNodes) {
         that.addAnswerClickManager()
+        that.addConsequenceClickManager()
         that.addQuestionClickManager()
         that.addNewProblemAnalysisManager()
         that.addSummarizeButtonHandler(rootNode)
@@ -325,6 +330,7 @@ class MindmapManager {
     obs.observe(parent, config)
     // obs.observe(document, config)
     this.addAnswerClickManager()
+    that.addConsequenceClickManager()
     this.addQuestionClickManager()
     this.addNewProblemAnalysisManager()
     this.addSummarizeButtonHandler(rootNode)
@@ -715,12 +721,22 @@ class MindmapManager {
               let nodes
               // GPT Answers
               let gptProblemsNodes
-              if (!that.isInProblemSpace(that, questionNode)) {
+              if (!that.isInProblemSpace(that, questionNode) && !questionNode._info.title.startsWith('WHICH') && !questionNode._info.title.includes('CONSEQUENCES') && !questionNode._info.title.includes('CRITERIA') && !questionNode._info.title.includes('CAUSES')) {
                 gptProblemsNodes = gptItemsNodes.map((c) => {
                   return {
                     text: c.label,
                     style: PromptStyles.AnswerItem,
                     image: IconsMap['tick-disabled'],
+                    parentId: nodeId,
+                    note: c.description
+                  }
+                })
+              } else if (questionNode._info.title.startsWith('WHICH') && questionNode._info.title.includes('CONSEQUENCES')) {
+                gptProblemsNodes = gptItemsNodes.map((c) => {
+                  return {
+                    text: c.label,
+                    style: PromptStyles.AnswerItem,
+                    image: IconsMap['up'],
                     parentId: nodeId,
                     note: c.description
                   }
@@ -749,7 +765,7 @@ class MindmapManager {
                     gptProblemsNodes.push({
                       text: currentProblem[0],
                       style: PromptStyles.ProblemForConsequenceItem,
-                      image: IconsMap['tick-disabled'],
+                      image: IconsMap['up'],
                       parentId: nodeId,
                       note: currentProblem[1]
                     })
@@ -867,7 +883,7 @@ class MindmapManager {
                       } else {
                         nodes = otherProblemsNodes
                       }
-                      if (questionNode._info.title.startsWith('WHICH')) {
+                      if (questionNode._info.title.startsWith('WHICH') && questionNode._info.title.includes('CONSEQUENCES')) {
                         let narrative = that.getNarrative(that, questionNode)
                         if (narrative.problem) {
                           let problems = narrative.problem.split(';')
@@ -876,7 +892,7 @@ class MindmapManager {
                           nodes.push({
                             text: currentProblem[0],
                             style: PromptStyles.AnswerItem,
-                            image: IconsMap['tick-disabled'],
+                            image: IconsMap['up'],
                             parentId: node.id,
                             note: currentProblem[1]
                           })
@@ -996,15 +1012,27 @@ class MindmapManager {
                     }
                     let nodes
                     // GPT Answers
-                    let gptProblemsNodes = gptItemsNodes.map((c) => {
-                      return {
-                        text: c.label,
-                        style: PromptStyles.AnswerItemAggregation,
-                        image: IconsMap['tick-disabled'],
-                        parentId: node.id,
-                        note: c.description
-                      }
-                    })
+                    let gptProblemsNodes
+                    if (node.text.startsWith('WHICH') && node.text.includes('CONSEQUENCES')) {
+                      gptProblemsNodes = gptItemsNodes.map((c) => {
+                        return {
+                          text: c.label,
+                          style: PromptStyles.AnswerItemAggregation,
+                          image: IconsMap['up'],
+                          parentId: node.id,
+                          note: c.description
+                        }
+                      })
+                    } else {
+                      gptProblemsNodes = gptItemsNodes.map((c) => {
+                        return {
+                          text: c.label,
+                          style: PromptStyles.AnswerItemAggregation,
+                          parentId: node.id,
+                          note: c.description
+                        }
+                      })
+                    }
                     nodes = gptProblemsNodes
                     let removeNodes = childrenNodes.map((c) => {
                       return {
@@ -1129,6 +1157,24 @@ class MindmapManager {
       })
     })
   }
+  /**
+   * Management of consequence nodes
+   */
+  addConsequenceClickManager () {
+    let that = this
+    let consequenceNodes = that.getConsequenceNodes()
+    consequenceNodes.forEach((n) => {
+      let iconElement = n.getIconElement()
+      if (iconElement == null || iconElement.classList.contains('chatin_answer')) return
+      iconElement.classList.add('chatin_answer')
+      iconElement.style.removeProperty('pointer-events')
+      iconElement.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        that.onClickIconConsequence(n)
+      })
+    })
+  }
   onClickIconAnswer (uiNode) {
     // todo
     Alerts.showLoadingWindow(`Loading...`)
@@ -1160,6 +1206,21 @@ class MindmapManager {
           })
         }
       }
+    })
+  }
+  onClickIconConsequence (uiNode) {
+    // todo
+    Alerts.showLoadingWindow(`Loading...`)
+    let that = this
+    if (uiNode._domElement) {
+      uiNode = uiNode._domElement
+    }
+    that.parseMap().then(() => {
+      let nodeObject = that._mindmapParser.getNodeById(uiNode.dataset.id)
+      let goodnessCriteriaNodes = this._mindmapParser.getNodesWithText(TemplateNodes.GOODNESS_CRITERIA)
+      if (goodnessCriteriaNodes == null || goodnessCriteriaNodes.length === 0) return // todo
+      let goodnessCriteriaNode = goodnessCriteriaNodes[0]
+      that.consequencesToGoodnessCriteria(nodeObject, goodnessCriteriaNode)
     })
   }
   addSiblingNode (that, node, type) {
@@ -1390,6 +1451,20 @@ class MindmapManager {
     let userAnswerNodes = MindmapWrapper.getNodesByRGBBackgroundColor(userAnswerColor)
     questionNodes = questionNodes.concat(pdfBasedQuestionNodes).concat(aggregatedAnswerNodes).concat(addressedProblemsNodes).concat(userAnswerNodes)
     questionNodes = questionNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['tick-enabled'].mindmeisterName.replace(/:/g, '') || n.emojiIcon === IconsMap['tick-disabled'].mindmeisterName.replace(/:/g, '')) })
+    return questionNodes
+  }
+  getConsequenceNodes () {
+    // green nodes with tick (either disabled or enabled) icon
+    let consequenceNodesColor = Utils.hexToRgb(PromptStyles.AnswerItem.backgroundColor)
+    let pdfBasedAnswerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItemPDFBased.backgroundColor)
+    let aggregatedAnswerNodesColor = Utils.hexToRgb(PromptStyles.AnswerItemAggregation.backgroundColor)
+    let userAnswerColor = Utils.hexToRgb(PromptStyles.UserAnswerItem.backgroundColor)
+    let questionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(consequenceNodesColor)
+    let pdfBasedQuestionNodes = MindmapWrapper.getNodesByRGBBackgroundColor(pdfBasedAnswerNodesColor)
+    let aggregatedAnswerNodes = MindmapWrapper.getNodesByRGBBackgroundColor(aggregatedAnswerNodesColor)
+    let userAnswerNodes = MindmapWrapper.getNodesByRGBBackgroundColor(userAnswerColor)
+    questionNodes = questionNodes.concat(pdfBasedQuestionNodes).concat(aggregatedAnswerNodes).concat(userAnswerNodes)
+    questionNodes = questionNodes.filter((n) => { return n.emojiIcon != null && (n.emojiIcon === IconsMap['up'].mindmeisterName.replace(/:/g, '')) })
     return questionNodes
   }
   getCurrentAddressedProblem () {
